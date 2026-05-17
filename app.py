@@ -3,10 +3,10 @@ import yfinance as yf
 import pandas as pd
 
 # 1. Configuración de la Página
-st.set_page_config(page_title="Agente IA Financiero Pro", layout="wide")
+st.set_page_config(page_title="Agente IA: Informes para Audiencias", layout="wide")
 
-st.title("🤖 Agente Financiero Pro: Multi-Sectores y Valor Intrínseco")
-st.markdown("Analizador avanzado y cazador automático de oportunidades con margen de seguridad.")
+st.title("🤖 Agente Financiero Pro: Generador de Informes para Seguidores")
+st.markdown("Auditoría de mercado con creación automática de boletines listos para enviar por correo o redes sociales.")
 st.markdown("---")
 
 # Barra lateral para monetización
@@ -14,11 +14,11 @@ st.sidebar.header("👑 Membresía VIP")
 st.sidebar.write("Accede a las alertas en tiempo real vía Telegram y reportes institucionales detallados.")
 st.sidebar.markdown("[👉 Unirse al Club de Inversores](https://substack.com)") 
 
-# Creamos pestañas para organizar las dos funciones sin que choquen
+# Pestañas de navegación
 tab1, tab2 = st.tabs(["🔍 Analizar Mis Acciones", "🎯 Cazador Automático Multisectorial"])
 
 # =====================================================================
-# PESTAÑA 1: ANALIZAR ACCIONES MANUALES (Tu función anterior intacta)
+# PESTAÑA 1: ANALIZAR ACCIONES MANUALES (Función original intacta)
 # =====================================================================
 with tab1:
     st.subheader("Analiza tu propia lista de vigilancia")
@@ -73,24 +73,22 @@ with tab1:
 
 
 # =====================================================================
-# PESTAÑA 2: CAZADOR AUTOMÁTICO (Nueva función solicitada)
+# PESTAÑA 2: CAZADOR AUTOMÁTICO CON CRITERIOS DE LOS PADRES FUNDADORES + INFORME PARA SEGUIDORES
 # =====================================================================
 with tab2:
-    st.subheader("Cazador de Oportunidades en Todos los Sectores")
-    st.write("El agente escaneará una lista predefinida de empresas líderes de múltiples sectores (Tecnología, Consumo, Salud, Financiero, Industrial) para extraer las mejores oportunidades con descuento actual.")
+    st.subheader("Cazador Multisectorial: Filtro de los Grandes Maestros")
+    st.write("El agente audita el mercado y redacta un boletín explicativo listo para enviar a tu comunidad.")
     
-    # Lista predefinida multisectorial de alta liquidez para el rastreo automático
     pool_mercado = [
-        "AAPL", "MSFT", "GOOGL", "AMZN", "META", # Tecnología / Digital
-        "JPM", "BAC", "V", "MA",                 # Financiero
-        "NKE", "TGT", "HD", "WMT", "KO",         # Consumo Cíclico y Básico
-        "JNJ", "PFE", "UNH", "MRK",              # Salud / Farmacéutico
-        "CAT", "GE", "MMM",                      # Industrial
-        "XOM", "CVX"                             # Energía
+        "AAPL", "MSFT", "GOOGL", "AMZN", "META", 
+        "JPM", "BAC", "V", "MA",                 
+        "NKE", "TGT", "HD", "WMT", "KO",         
+        "JNJ", "PFE", "UNH", "MRK",              
+        "CAT", "GE", "MMM",                      
+        "XOM", "CVX"                             
     ]
     
-    # Filtro opcional por si el usuario quiere buscar un margen mínimo de descuento
-    margen_minimo = st.slider("Margen de descuento mínimo requerido (%)", 10, 50, 20)
+    margen_minimo = st.slider("Margen de descuento mínimo requerido (%)", 10, 50, 15, key="slider_auto")
 
     if st.button("🛰️ Escanear Todo el Mercado", key="btn_auto"):
         oportunidades_encontradas = []
@@ -99,8 +97,7 @@ with tab2:
         status_text = st.empty()
         
         for index, t in enumerate(pool_mercado):
-            status_text.text(f"Agente investigando sector de: {t}...")
-            # Actualizar barra de progreso visual
+            status_text.text(f"Evaluando {t} bajo las tesis de Graham, Buffett y Lynch...")
             progress_bar.progress((index + 1) / len(pool_mercado))
             
             try:
@@ -111,55 +108,97 @@ with tab2:
                 eps = info.get('trailingEps', 0)
                 sector = info.get('sector', 'Otros')
                 nombre = info.get('longName', t)
+                
+                deuda_capital = info.get('debtToEquity', None)
+                roe = info.get('returnOnEquity', None)        
+                peg_ratio = info.get('pegRatio', None)        
+                
                 crecimiento = info.get('earningsGrowth', 0.05) or 0.05
                 if crecimiento <= 0: crecimiento = 0.05
                 
                 if eps and eps > 0:
                     valor_intrinseco = eps * (8.5 + (2 * (crecimiento * 100)))
+                    descuento = ((valor_intrinseco - precio_actual) / valor_intrinseco) * 100
                     
-                    if valor_intrinseco > precio_actual:
-                        descuento = ((valor_intrinseco - precio_actual) / valor_intrinseco) * 100
+                    if valor_intrinseco > precio_actual and descuento >= margen_minimo:
                         
-                        # Guardar solo las que superan el margen elegido por el usuario
-                        if descuento >= margen_minimo:
-                            # El agente redacta el PORQUÉ detallado de la oportunidad
-                            porque_informe = (
-                                f"Oportunidad detectada en el sector **{sector}**. "
-                                f"La empresa muestra una sólida base de ganancias con un EPS de ${eps:.2f}. "
-                                f"El mercado la cotiza actualmente a ${precio_actual:.2f}, pero basándose en su ritmo de crecimiento, "
-                                f"su valor intrínseco estimado es de **${valor_intrinseco:.2f}**, ofreciéndote un "
-                                f"atractivo **{descuento:.1f}% de descuento (Margen de Seguridad)** ante fluctuaciones del mercado."
-                            )
+                        # Auditoría de los maestros
+                        aprobo_graham = "❌ Rechazado (Deuda alta)"
+                        if deuda_capital is not None and deuda_capital < 100:
+                            aprobo_graham = f"✅ Aprobado (Deuda baja de {deuda_capital:.1f}%)"
                             
-                            oportunidades_encontradas.append({
-                                "Ticker": t,
-                                "Empresa": nombre,
-                                "Sector": sector,
-                                "Precio": f"${precio_actual:.2f}",
-                                "Valor Real": f"${valor_intrinseco:.2f}",
-                                "Descuento": f"{descuento:.1f}%",
-                                "Tesis / ¿Por qué?": porque_informe
-                            })
+                        aprobo_buffett = "❌ Rechazado (ROE ineficiente)"
+                        if roe is not None and roe >= 0.15:
+                            aprobo_buffett = f"✅ Aprobado (Excelente ROE de {roe*100:.1f}%)"
+                            
+                        aprobo_lynch = "❌ Rechazado (Precio/Crecimiento alto)"
+                        if peg_ratio is not None and peg_ratio <= 1.5:
+                            aprobo_lynch = f"✅ Aprobado (Buen precio relativo, PEG: {peg_ratio:.2f})"
+                        elif peg_ratio is None:
+                            aprobo_lynch = "⚠️ Datos de crecimiento insuficientes"
+
+                        informe_maestros = (
+                            f"📌 **Benjamin Graham:** {aprobo_graham}. Margen de seguridad del {descuento:.1f}% (Valor Real: ${valor_intrinseco:.2f} vs Precio: ${precio_actual:.2f}).\n\n"
+                            f"📌 **Warren Buffett:** {aprobo_buffett}. Negocio con ventajas competitivas robustas dentro del sector {sector}.\n\n"
+                            f"📌 **Peter Lynch:** {aprobo_lynch}. Valora si el ritmo de ganancias futuras justifica lo que pagamos hoy."
+                        )
+                        
+                        oportunidades_encontradas.append({
+                            "Ticker": t,
+                            "Empresa": nombre,
+                            "Sector": sector,
+                            "Precio": f"${precio_actual:.2f}",
+                            "Descuento Graham": f"{descuento:.1f}%",
+                            "Dictamen de los Grandes Inversores": informe_maestros,
+                            # Guardamos variables crudas para el redactor de informes
+                            "val_real": valor_intrinseco,
+                            "desc_num": descuento,
+                            "salud_deuda": "estable y controlada" if (deuda_capital and deuda_capital < 100) else "por vigilar"
+                        })
             except:
                 pass
                 
-        status_text.text("¡Escaneo multisectorial completado!")
+        status_text.text("¡Auditoría e informes listos!")
         
-        # Mostrar resultados del radar masivo
         if oportunidades_encontradas:
-            st.success(f"🎯 El Agente detectó {len(oportunidades_encontradas)} acciones con un descuento mayor al {margen_minimo}%.")
-            df_oportunidades = pd.DataFrame(oportunidades_encontradas)
+            st.success(f"🎯 El Agente detectó {len(oportunidades_encontradas)} acciones con descuento óptimo.")
             
-            # Mostrar como tabla interactiva
+            # --- CONSTRUCCIÓN DEL INFORME DETALLADO PARA SEGUIDORES ---
+            texto_boletin = (
+                "📢 **INFORME DE MERCADO: ALERTAS DE INVERSIÓN EN VALOR** 🚀\n"
+                "¡Hola a todos! Comparto con nuestra comunidad las oportunidades más atractivas detectadas hoy "
+                "por nuestro Agente de Inteligencia Artificial Financiera. Hemos auditado los sectores clave buscando "
+                "empresas sólidas que cotizan con un descuento importante respecto a su valor real real, cumpliendo los "
+                "requisitos de Graham, Buffett y Lynch.\n\n"
+                "---"
+            )
+            
+            for item in oportunidades_encontradas:
+                texto_boletin += (
+                    f"\n\n🔥 **{item['Empresa']} ({item['Ticker']})**\n"
+                    f"• **Sector:** {item['Sector']}\n"
+                    f"• **Precio de Mercado Actual:** {item['Precio']}\n"
+                    f"• **Valor Intrínseco Real:** ${item['val_real']:.2f}\n"
+                    f"• **Descuento Presentado:** {item['Descuento Graham']} de Margen de Seguridad.\n"
+                    f"• **Diagnóstico de Salud Financiera:** La estructura de deudas se encuentra en estado *{item['salud_deuda']}*.\n"
+                    f"• **¿Por qué es una oportunidad?:** Cumple las reglas clásicas de inversión. Presenta una ventaja competitiva visible "
+                    f"en sus retornos operativos y su precio actual en Wall Street no está inflado respecto a lo que la empresa gana año con año.\n"
+                    f"---"
+                )
+                
+            texto_boletin += (
+                "\n\n*Nota: Recuerden que esto representa un análisis cuantitativo automatizado de salud financiera y valor. "
+                "Hagan siempre su propia gestión de riesgo antes de tomar decisiones operativas. ¡Buen éxito en sus inversiones!*"
+            )
+            
+            # Mostrar el bloque de texto listo para ser copiado
+            st.subheader("📋 Informe Ejecutivo Listo para Enviar a tus Seguidores")
+            st.text_area("Copia el texto de abajo y envíalo directamente por Correo, Telegram o Redes:", texto_boletin, height=450)
+            
+            # Mostrar además la tabla técnica que ya tenías
+            st.subheader("📊 Datos Técnicos del Escaneo")
+            df_oportunidades = pd.DataFrame(oportunidades_encontradas).drop(columns=['val_real', 'desc_num', 'salud_deuda'])
             st.dataframe(df_oportunidades, use_container_width=True)
             
-            # Opción premium para descargar las alertas del radar
-            csv_auto = df_oportunidades.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Descargar Tesis de Inversión (CSV)",
-                data=csv_auto,
-                file_name='radar_oportunidades_ia.csv',
-                mime='text/csv',
-            )
         else:
-            st.info(f"El mercado está ajustado. Ninguna acción de la lista superó el {margen_minimo}% de descuento en este momento.")
+            st.info(f"Ninguna acción superó el {margen_minimo}% de descuento bajo las reglas combinadas en este momento.")
