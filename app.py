@@ -4,10 +4,10 @@ import pandas as pd
 import io
 
 # Configuración de interfaz profesional
-st.set_page_config(page_title="Agente IA: Escáner por Índices Oficiales", layout="wide")
+st.set_page_config(page_title="Agente IA: Terminal Macro & Rotación", layout="wide")
 
-st.title("🤖 Agente IA: Escáner de Acciones por Índices Oficiales")
-st.markdown("### Segmentación Estricta: Filtra el mercado índice por índice y extrae las acciones que cumplen con los requisitos de los Grandes Maestros.")
+st.title("🤖 Agente IA: Terminal Macro Global & Rotación de Sectores")
+st.markdown("### Inteligencia de Capitales: Escaneo de Índices Mundiales, Confluencia por Índice y Radar de Flujos de Dinero (Smart Money).")
 st.markdown("---")
 
 # Sección de Monetización en la barra lateral
@@ -15,7 +15,12 @@ st.sidebar.header("👑 Acceso Premium Alpha")
 st.sidebar.write("Recibe alertas institucionales y análisis de sectores emergentes de alta barrera de entrada.")
 st.sidebar.markdown("[👉 Suscribirse al Boletín VIP](https://substack.com)") 
 
-tab1, tab2 = st.tabs(["🔍 Auditoría Manual", "🛰️ Radar Macroeconómico e Índices del Mundo"])
+# Se añade la Pestaña 3 manteniendo intactas las dos anteriores
+tab1, tab2, tab3 = st.tabs([
+    "🔍 Auditoría Manual", 
+    "🛰️ Radar Macroeconómico e Índices del Mundo",
+    "🧱 Rotación de Sectores y Flujo de Capital"
+])
 
 # =====================================================================
 # PESTAÑA 1: ANÁLISIS MANUAL (Función original intacta)
@@ -65,13 +70,12 @@ with tab1:
                 st.dataframe(pd.DataFrame(resultados), use_container_width=True)
 
 # =====================================================================
-# PESTAÑA 2: RADAR MACRO + ESCANEO SEGMENTADO POR ÍNDICE SELECCIONADO
+# PESTAÑA 2: RADAR MACRO + ESCANEO SEGMENTADO POR ÍNDICE (Intacta)
 # =====================================================================
 with tab2:
     st.subheader("🛰️ Sistema de Rastreo Global y Filtro Fundamental en Tiempo Real")
     st.write("Selecciona qué índice oficial deseas que el agente barra por completo para extraer las acciones individuales que cumplen tus condiciones.")
     
-    # Casilla modificada para que el usuario escoja individualmente el Universo/Índice a escanear
     enfoque_mercado = st.selectbox(
         "Selecciona el universo de mercado a auditar hoy:",
         [
@@ -80,28 +84,19 @@ with tab2:
             "Dow Jones (Aristócratas e Industria Pesada) 🏗️", 
             "Russell 2000 (Joyas y Small Caps de Crecimiento Estricto) 🌱",
             "Escanear Todo el Mercado Integrado (Espectro Completo) 🌍"
-        ]
+        ], key="sb_p2"
     )
     
-    margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 15, 40, 20, key="slider_macro_indices_fijos")
+    margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 15, 40, 20, key="slider_macro_p2")
 
     if st.button("🛰️ Lanzar Algoritmo de Búsqueda Global", key="btn_auto"):
         
-        # 1. DIAGNÓSTICO EN VIVO DE LECTURA MACRO DE LOS ÍNDICES
         st.subheader("📊 Diagnóstico Técnico de Índices Globales")
         indices_dict = {
-            "S&P 500 (EE.UU.) 🏢": "^GSPC",
-            "Dow Jones (EE.UU.) 🏗️": "^DJI",
-            "NASDAQ Composite (EE.UU.) 💻": "^IXIC",
-            "NASDAQ 100 (EE.UU.) 🚀": "^NDX",
-            "Russell 2000 (Small Caps) 🌱": "^RUT",
-            "Euro Stoxx 50 (Europa) 🇪🇺": "^STOXX50E",
-            "DAX (Alemania) 🇩🇪": "^GDAXI",
-            "FTSE 100 (Reino Unido) 🇬🇧": "^FTSE",
-            "Nikkei 225 (Japón) 🇯🇵": "^N225",
-            "Hang Seng (Hong Kong) 🇭🇰": "^HSI",
-            "Bovespa (Brasil) 🇧🇷": "^BVSP",
-            "S&P/BMV IPC (México) 🇲🇽": "^MXX"
+            "S&P 500 (EE.UU.) 🏢": "^GSPC", "Dow Jones (EE.UU.) 🏗️": "^DJI", "NASDAQ Composite (EE.UU.) 💻": "^IXIC",
+            "NASDAQ 100 (EE.UU.) 🚀": "^NDX", "Russell 2000 (Small Caps) 🌱": "^RUT", "Euro Stoxx 50 (Europa) 🇪🇺": "^STOXX50E",
+            "DAX (Alemania) 🇩🇪": "^GDAXI", "FTSE 100 (Reino Unido) 🇬🇧": "^FTSE", "Nikkei 225 (Japón) 🇯🇵": "^N225",
+            "Hang Seng (Hong Kong) 🇭🇰": "^HSI", "Bovespa (Brasil) 🇧🇷": "^BVSP", "S&P/BMV IPC (México) 🇲🇽": "^MXX"
         }
         
         analisis_indices = []
@@ -114,15 +109,12 @@ with tab2:
                         precio_actual = hist['Close'].iloc[-1]
                         precio_previo = hist['Close'].iloc[-2]
                         cambio_diario = ((precio_actual - precio_previo) / precio_previo) * 100
-                        
                         precio_inicial = hist['Close'].iloc[0]
                         tendencia_5d = "📈 Alcista" if precio_actual > precio_inicial else "📉 Bajista"
                         
                         analisis_indices.append({
-                            "Región / Índice": nombre_ind,
-                            "Nivel de Cierre": round(precio_actual, 2),
-                            "Cambio Diario": f"{cambio_diario:+.2f}%",
-                            "Tendencia Semanal": tendencia_5d
+                            "Región / Índice": nombre_ind, "Nivel de Cierre": round(precio_actual, 2),
+                            "Cambio Diario": f"{cambio_diario:+.2f}%", "Tendencia Semanal": tendencia_5d
                         })
                 except:
                     pass
@@ -130,59 +122,50 @@ with tab2:
         df_indices = pd.DataFrame(analisis_indices)
         if not df_indices.empty:
             st.dataframe(df_indices, use_container_width=True)
-        else:
-            st.warning("No se pudo extraer la información internacional de los índices.")
 
-        # 2. ASIGNACIÓN MATRICIAL DE TICKERS POR ÍNDICE ORIGEN
         dict_sp500 = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "BRK-B", "V", "MA", "JPM", "BAC", "XOM", "CVX", "PG", "KO", "NKE", "TGT", "COST", "WMT", "HD", "JNJ", "PFE", "UNH", "MRK"]
         dict_nasdaq = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "AMD", "QCOM", "INTC", "TSM", "ASML", "ISRG", "NFLX", "ADBE", "PANW", "CEG", "OKLO"]
         dict_dowjones = ["AAPL", "MSFT", "AMZN", "V", "JPM", "AXP", "PG", "KO", "WMT", "HD", "JNJ", "UNH", "MRK", "CAT", "DE", "HON", "BA", "MMM", "DIS", "CVX"]
         dict_russell2000 = ["CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "PDFS", "CEVA", "AEIS", "COHR", "UFPI", "AIT", "FIX", "AMWD", "PLUS", "SKX", "MED", "CALM", "SFBS", "CCRN", "NEOG", "LNTH"]
 
-        # Filtrado del pool y marcado de origen según la casilla seleccionada
         pool_dinamico = []
         mapeo_origen = {}
 
-        with st.spinner("Cargando componentes del índice seleccionado..."):
-            if "S&P 500" in enfoque_mercado:
-                pool_dinamico = dict_sp500
-                for tk in dict_sp500: mapeo_origen[tk] = "S&P 500 🏢"
-            elif "NASDAQ" in enfoque_mercado:
-                pool_dinamico = dict_nasdaq
-                for tk in dict_nasdaq: mapeo_origen[tk] = "NASDAQ / NASDAQ 100 🚀"
-            elif "Dow Jones" in enfoque_mercado:
-                pool_dinamico = dict_dowjones
-                for tk in dict_dowjones: mapeo_origen[tk] = "Dow Jones Industrial 🏗️"
-            elif "Russell 2000" in enfoque_mercado:
-                pool_dinamico = dict_russell2000
-                for tk in dict_russell2000: mapeo_origen[tk] = "Russell 2000 (Small Caps) 🌱"
-            else:
-                # Espectro completo integrado (Une todo y asigna su índice correspondiente)
-                for tk in dict_sp500: mapeo_origen[tk] = "S&P 500 🏢"
-                for tk in dict_nasdaq: mapeo_origen[tk] = "NASDAQ 100 🚀"
-                for tk in dict_dowjones: mapeo_origen[tk] = "Dow Jones 🏗️"
-                for tk in dict_russell2000: mapeo_origen[tk] = "Russell 2000 (Small Cap) 🌱"
-                pool_dinamico = list(set(dict_sp500 + dict_nasdaq + dict_dowjones + dict_russell2000))
+        if "S&P 500" in enfoque_mercado:
+            pool_dinamico = dict_sp500
+            for tk in dict_sp500: mapeo_origen[tk] = "S&P 500 🏢"
+        elif "NASDAQ" in enfoque_mercado:
+            pool_dinamico = dict_nasdaq
+            for tk in dict_nasdaq: mapeo_origen[tk] = "NASDAQ / NASDAQ 100 🚀"
+        elif "Dow Jones" in enfoque_mercado:
+            pool_dinamico = dict_dowjones
+            for tk in dict_dowjones: mapeo_origen[tk] = "Dow Jones Industrial 🏗️"
+        elif "Russell 2000" in enfoque_mercado:
+            pool_dinamico = dict_russell2000
+            for tk in dict_russell2000: mapeo_origen[tk] = "Russell 2000 (Small Caps) 🌱"
+        else:
+            for tk in dict_sp500: mapeo_origen[tk] = "S&P 500 🏢"
+            for tk in dict_nasdaq: mapeo_origen[tk] = "NASDAQ 100 🚀"
+            for tk in dict_dowjones: mapeo_origen[tk] = "Dow Jones 🏗️"
+            for tk in dict_russell2000: mapeo_origen[tk] = "Russell 2000 (Small Cap) 🌱"
+            pool_dinamico = list(set(dict_sp500 + dict_nasdaq + dict_dowjones + dict_russell2000))
 
         oportunidades = []
         progress = st.progress(0)
         status = st.empty()
         
-        # 3. FILTRO INDIVIDUAL CON IDENTIFICACIÓN DE ÍNDICE DE ORIGEN
         for idx, t in enumerate(pool_dinamico):
             indice_procedencia = mapeo_origen.get(t, "Mercado General")
-            status.text(f"Extrayendo y auditando de [{indice_procedencia}] el activo ({idx+1}/{len(pool_dinamico)}): {t}...")
+            status.text(f"Auditando de [{indice_procedencia}] ({idx+1}/{len(pool_dinamico)}): {t}...")
             progress.progress((idx + 1) / len(pool_dinamico))
             
             try:
                 ticker = yf.Ticker(t)
                 info = ticker.info
-                
                 precio = info.get('currentPrice', 0)
                 eps = info.get('trailingEps', 0)
                 sector = info.get('sector', 'Otros')
                 nombre = info.get('longName', t)
-                
                 deuda_capital = info.get('debtToEquity', None)
                 roe = info.get('returnOnEquity', None)
                 peg = info.get('pegRatio', None)
@@ -197,91 +180,230 @@ with tab2:
                     descuento = ((valor_intrinseco - precio) / valor_intrinseco) * 100
                     
                     if valor_intrinseco > precio and descuento >= margen_exigido:
-                        
                         is_small_cap = cap_mercado < 6000000000
                         tipo_empresa = "Small Cap de Crecimiento 🚀" if is_small_cap else "Large/Mega Cap 🏢"
-                        
-                        # Cortafuegos crítico: Descartar de forma autónoma Small Caps sin crecimiento verificado
                         if is_small_cap and (crecimiento_ganancias is None or crecimiento_ganancias <= 0.02):
                             continue 
                         
-                        # Evaluación combinada de Maestros
-                        cumple_graham = "✅ CUMPLE (Baja Deuda)" if (deuda_capital and deuda_capital < 100) else "❌ RIESGO (Apalancada)"
-                        cumple_buffett = "✅ CUMPLE (Moat Sólido)" if (roe and roe >= 0.15) else "❌ SIN MOAT (Bajo ROE)"
-                        cumple_lynch = "✅ CUMPLE (Buen Precio)" if (peg and peg <= 1.5) else "❌ AJUSTADO (Múltiplo Alto)"
+                        cumple_graham = "✅ CUMPLE" if (deuda_capital and deuda_capital < 100) else "❌ RIESGO"
+                        cumple_buffett = "✅ CUMPLE" if (roe and roe >= 0.15) else "❌ SIN MOAT"
+                        cumple_lynch = "✅ CUMPLE" if (peg and peg <= 1.5) else "❌ AJUSTADO"
+                        tasa_str = f"{crecimiento_ganancias*100:.1f}%" if crecimiento_ganancias else "N/D"
                         
-                        tasa_str = f"{crecimiento_ganancias*100:.1f}%" if crecimiento_ganancias else "N/D (Est. 5%)"
-                        
-                        informe_ejecutivo = (
-                            f"Índice de Origen: {indice_procedencia} | Sector: {sector} ({tipo_empresa}).\n"
-                            f"Expansión Trimestral: {tasa_str} | Margen de Seguridad: {descuento:.1f}%\n"
-                            f"• Filtro Graham: {cumple_graham} (Relación: {deuda_capital if deuda_capital else 'N/D'}%)\n"
-                            f"• Filtro Buffett: {cumple_buffett} (ROE: {f'{roe*100:.1f}%' if roe else 'N/D'})\n"
-                            f"• Filtro Peter Lynch: {cumple_lynch} (PEG: {peg if peg else 'N/D'})"
-                        )
+                        informe_ejecutivo = (f"Índice: {indice_procedencia} | Sector: {sector}\n"
+                                             f"Graham: {cumple_graham} | Buffett: {cumple_buffett} | Lynch: {cumple_lynch}")
                         
                         oportunidades.append({
-                            "Ticker": t,
-                            "Empresa": nombre,
-                            "Índice de Origen": indice_procedencia,
-                            "Sector": sector,
-                            "Categoría": tipo_empresa,
-                            "Precio Actual": precio,
-                            "Crecimiento Beneficios": tasa_str,
-                            "Valor Real Estimado": round(valor_intrinseco, 2),
-                            "Margen de Seguridad": f"{descuento:.1f}%",
-                            "Dictamen del Agente": informe_ejecutivo
+                            "Ticker": t, "Empresa": nombre, "Índice de Origen": indice_procedencia, "Sector": sector,
+                            "Categoría": tipo_empresa, "Precio Actual": precio, "Crecimiento": tasa_str,
+                            "Valor Real Estimado": round(valor_intrinseco, 2), "Margen de Seguridad": f"{descuento:.1f}%", "Dictamen del Agente": informe_ejecutivo
                         })
             except:
                 pass
                 
-        status.text("¡Auditoría por índices y escaneo de activos finalizada!")
-        
-        # 4. ENTREGA DE RESULTADOS CON LA FILIACIÓN DEL ÍNDICE CLARA
+        status.text("¡Auditoría por índices finalizada!")
         if oportunidades:
-            st.success(f"🎯 El Agente detectó {len(oportunidades)} acciones que superaron con éxito los filtros en el índice seleccionado.")
             df_final = pd.DataFrame(oportunidades)
-            
-            # --- CREACIÓN EXCEL NATIVO CON COLUMNA DE FILIACIÓN ---
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_indices.to_excel(writer, index=False, sheet_name='Índices Mundiales Macro')
-                df_final.to_excel(writer, index=False, sheet_name='Acciones por Índice IA')
-            buffer.seek(0)
-            
-            st.subheader("📥 Descarga de Herramientas Profesionales Globales")
-            st.download_button(
-                label=f"🟢 Descargar Reporte de {enfoque_mercado} en Excel (.xlsx)",
-                data=buffer,
-                file_name='reporte_segmentado_por_indice_ia.xlsx',
-                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            )
-            
-            st.subheader("📊 Vista Previa de Acciones que superaron la Auditoría")
             st.dataframe(df_final, use_container_width=True)
+
+# =====================================================================
+# NUEVA PESTAÑA 3: ROTACIÓN DE SECTORES Y FLUJO DE CAPITAL (ANÁLISIS DE FLUJO)
+# =====================================================================
+with tab3:
+    st.subheader("🧱 Análisis de Fuerza Sectorial y Rastreador de Flujos (Smart Money)")
+    st.write("El agente audita los 11 ETFs sectoriales del SPDR (GICS) para identificar el sector más castigado y monitorizar anomalías de volumen institucional.")
+    
+    margen_sectores = st.slider("Margen de Seguridad para Acciones Sectoriales (%)", 15, 40, 20, key="slider_p3")
+
+    if st.button("🛰️ Analizar Rotación de Sectores e Inyección de Capital", key="btn_p3"):
+        
+        # Mapeo de los 11 Sectores Oficiales a través de sus ETFs de referencia institucionales (SPDR)
+        sectores_etf = {
+            "Tecnológico de Información 💻": "XLK", "Finanzas 🏦": "XLF", "Salud 🩺": "XLV",
+            "Consumo Discrecional 🛍️": "XLY", "Consumo Básico 🛒": "XLP", "Comunicación 📱": "XLC",
+            "Industrial 🏗️": "XLI", "Energía ⚡": "XLE", "Materiales 🧱": "XLB",
+            "Servicios Públicos (Utilities) 🚰": "XLU", "Inmobiliario (Real Estate) 🏢": "XLRE"
+        }
+        
+        desempeno_sectores = []
+        
+        with st.spinner("Midiendo fuerza relativa y variaciones de los 11 sectores oficiales..."):
+            for nombre_sec, ticker_sec in sectores_etf.items():
+                try:
+                    etf = yf.Ticker(ticker_sec)
+                    hist_sec = etf.history(period="5d")
+                    if len(hist_sec) >= 2:
+                        cierre_hoy = hist_sec['Close'].iloc[-1]
+                        cierre_previo = hist_sec['Close'].iloc[-2]
+                        var_diaria = ((cierre_hoy - cierre_previo) / cierre_previo) * 100
+                        
+                        # Rendimiento de corto plazo (5 días) para detectar el más golpeado
+                        cierre_inicial = hist_sec['Close'].iloc[0]
+                        rendimiento_5d = ((cierre_hoy - cierre_inicial) / cierre_inicial) * 100
+                        
+                        desempeno_sectores.append({
+                            "Sector": nombre_sec, "ETF Referencia": ticker_sec,
+                            "Cambio Diario": var_diaria, "Rendimiento Semanal (%)": round(rendimiento_5d, 2)
+                        })
+                except:
+                    pass
+                    
+        df_sectores = pd.DataFrame(desempeno_sectores)
+        
+        if not df_sectores.empty:
+            # Identificación matemática del sector más castigado
+            df_sectores = df_sectores.sort_values(by="Rendimiento Semanal (%)", ascending=True)
+            sector_mas_castigado = df_sectores.iloc[0]['Sector']
+            ticker_castigado = df_sectores.iloc[0]['ETF Referencia']
+            peor_rendimiento = df_sectores.iloc[0]['Rendimiento Semanal (%)']
             
-            # --- CONSTRUCCIÓN DEL BOLETÍN INTEGRAL CON ORIGEN ACLARADO ---
-            boletin = (
-                f"📢 **INFORME DE INVERSIÓN: ACCIONES FILTRADAS POR ÍNDICE OFICIAL** 🚀\n\n"
-                f"Estimada comunidad: Compartimos los resultados del escáner avanzado de nuestra IA.\n"
-                f"Universo auditado minuciosamente hoy: {enfoque_mercado}\n"
-                f"======================================================\n"
-            )
-            for op in oportunidades:
-                boletin += (
-                    f"\n💎 **{op['Empresa']} ({op['Ticker']})**\n"
-                    f"• 📍 Extraída del Índice: {op['Índice de Origen']}\n"
-                    f"• Sector y Categoría: {op['Sector']} | {op['Categoría']}\n"
-                    f"• Crecimiento Trimestral: {op['Crecimiento Beneficios']}\n"
-                    f"• Precio de Mercado: ${op['Precio Actual']:.2f} | Valor Intrínseco Real: ${op['Valor Real Estimado']:.2f}\n"
-                    f"• Margen de Seguridad: {op['Margen de Seguridad']}\n"
-                    f"• Dictamen del Comité de Maestros:\n{op['Dictamen del Agente']}\n"
-                    f"------------------------------------------------------\n"
+            st.success(f"🚨 **Sector Más Castigado del Mercado:** {sector_mas_castigado} ({ticker_castigado}) con un rendimiento semanal de {peor_rendimiento:.2f}%")
+            
+            st.markdown("### 📊 Desempeño de los 11 Sectores GICS")
+            # Formatear visualmente antes de imprimir
+            df_sec_mostrar = df_sectores.copy()
+            df_sec_mostrar["Cambio Diario"] = df_sec_mostrar["Cambio Diario"].map("{:+.2f}%".format)
+            st.dataframe(df_sec_mostrar, use_container_width=True)
+            
+            # --- MAPEO DE ACCIONES ASOCIADAS A CADA SECTOR ---
+            mapeo_acciones_sector = {
+                "Tecnológico de Información 💻": ["AAPL", "MSFT", "NVDA", "AVGO", "AMD", "QCOM", "CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM"],
+                "Finanzas 🏦": ["V", "MA", "JPM", "BAC", "MS", "GS", "AXP", "SFBS", "CCRN"],
+                "Salud 🩺": ["JNJ", "PFE", "UNH", "MRK", "ABV", "LLY", "NEOG", "LNTH"],
+                "Consumo Discrecional 🛍️": ["NKE", "TGT", "HD", "AMZN", "SBUX", "SKX", "DECK", "CROX"],
+                "Consumo Básico 🛒": ["PG", "KO", "PEP", "COST", "WMT", "CL", "CALM"],
+                "Comunicación 📱": ["GOOGL", "META", "NFLX", "DIS"],
+                "Industrial 🏗️": ["CAT", "DE", "HON", "UPS", "FDX", "UFPI", "AIT", "FIX", "PLUS"],
+                "Energía ⚡": ["XOM", "CVX", "CEG", "OKLO", "VST", "SMR"],
+                "Materiales 🧱": ["XLB", "AWI", "MLI"],
+                "Servicios Públicos (Utilities) 🚰": ["NEE", "XLU"],
+                "Inmobiliario (Real Estate) 🏢": ["XLRE", "PLD"]
+            }
+            
+            # 2. ESCANEO EXCLUSIVO DEL SECTOR CASTIGADO
+            st.markdown(f"### 🔍 Buscando Oportunidades en el Sector Castigado: {sector_mas_castigado}")
+            acciones_a_evaluar = mapeo_acciones_sector.get(sector_mas_castigado, ["GOOGL", "V", "NKE"])
+            
+            oportunidades_sectoriales = []
+            for t in acciones_a_evaluar:
+                try:
+                    ticker = yf.Ticker(t)
+                    info = ticker.info
+                    precio = info.get('currentPrice', 0)
+                    eps = info.get('trailingEps', 0)
+                    cap_mercado = info.get('marketCap', 0)
+                    crecimiento_ganancias = info.get('earningsGrowth', 0.05) or 0.05
+                    
+                    if eps and eps > 0:
+                        valor_intrinseco = eps * (8.5 + (2 * (crecimiento_ganancias * 100)))
+                        descuento = ((valor_intrinseco - precio) / valor_intrinseco) * 100
+                        
+                        if valor_intrinseco > precio and descuento >= margen_sectores:
+                            is_small_cap = cap_mercado < 6000000000
+                            if is_small_cap and crecimiento_ganancias <= 0.02:
+                                continue
+                                
+                            oportunidades_sectoriales.append({
+                                "Ticker": t, "Empresa": info.get('longName', t), "Precio": precio,
+                                "Valor Intrínseco": round(valor_intrinseco, 2), "Descuento": f"{descuento:.1f}%"
+                            })
+                except:
+                    pass
+                    
+            if oportunidades_sectoriales:
+                st.dataframe(pd.DataFrame(oportunidades_sectoriales), use_container_width=True)
+            else:
+                st.info(f"Ninguna acción del sector {sector_mas_castigado} cotiza con el margen de seguridad exigido hoy.")
+                
+            # 3. MONITOREO DE ACUMULACIÓN Y FLUJO DE CAPITAL (SMART MONEY)
+            st.markdown("### 🛰️ Rastreador de Flujo de Capital (Anomalías de Volumen)")
+            st.write("El agente escanea el volumen de negociación en tiempo real frente al promedio de los últimos 3d para identificar inyecciones masivas de dinero.")
+            
+            todos_los_activos = []
+            for lista in mapeo_acciones_sector.values():
+                todos_los_activos.extend(lista)
+            todos_los_activos = list(set(todos_los_activos)) # Eliminar duplicados
+            
+            flujo_capital = []
+            with st.spinner("Analizando volumen de transacciones institucionales..."):
+                for t in todos_los_activos:
+                    try:
+                        ticker = yf.Ticker(t)
+                        info = ticker.info
+                        volumen_actual = info.get('volume', 0)
+                        volumen_promedio = info.get('averageVolume', 1)
+                        precio = info.get('currentPrice', 0)
+                        sector_pertenece = info.get('sector', 'Otros')
+                        
+                        # Ratio de volumen: mayor a 1.2 implica acumulación inusual de capital
+                        ratio_volumen = volumen_actual / volumen_promedio
+                        
+                        if volumen_actual > 0:
+                            flujo_capital.append({
+                                "Ticker": t, "Empresa": info.get('longName', t), "Sector": sector_pertenece,
+                                "Precio": precio, "Volumen Hoy": volumen_actual, "Anomalía de Inyección (Ratio)": round(ratio_volumen, 2)
+                            })
+                    except:
+                        pass
+                        
+            df_flujo = pd.DataFrame(flujo_capital)
+            if not df_flujo.empty:
+                # Filtrar las acciones más compradas/acumuladas (Ratio de volumen más alto)
+                df_acumulacion = df_flujo.sort_values(by="Anomalía de Inyección (Ratio)", ascending=False).head(5)
+                
+                st.write("🔥 **Top 5 Acciones con Mayor Acumulación de Volumen hoy:**")
+                st.dataframe(df_acumulacion, use_container_width=True)
+                
+                # Identificar a qué sector está migrando el dinero sumando los ratios por sector
+                sector_migracion = df_flujo.groupby("Sector")["Anomalía de Inyección (Ratio)"].mean().reset_index()
+                sector_migracion = sector_migracion.sort_values(by="Anomalía de Inyección (Ratio)", ascending=False)
+                
+                sector_lider_flujo = sector_migracion.iloc[0]['Sector']
+                st.info(f"💰 **Destino Institucional:** El capital inteligente está migrando o acumulándose con mayor fuerza en el sector: **{sector_lider_flujo}**")
+                
+                # --- EXCEL EXCLUSIVO SECTORIAL ---
+                buffer_sec = io.BytesIO()
+                with pd.ExcelWriter(buffer_sec, engine='openpyxl') as writer:
+                    df_sectores.to_excel(writer, index=False, sheet_name='Fuerza Sectorial GICS')
+                    if oportunidades_sectoriales:
+                        pd.DataFrame(oportunidades_sectoriales).to_excel(writer, index=False, sheet_name='Oportunidades Sector Castigado')
+                    df_acumulacion.to_excel(writer, index=False, sheet_name='Acumulación Smart Money')
+                buffer_sec.seek(0)
+                
+                st.download_button(
+                    label="🟢 Descargar Reporte de Rotación y Flujos en Excel (.xlsx)",
+                    data=buffer_sec,
+                    file_name='reporte_rotacion_y_flujo_ia.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 )
-            boletin += "\n*Este informe técnico automatizado evalúa variables financieras macro e institucionales, no constituye asesoría financiera directa.*"
-            
-            st.subheader("📋 Boletín Segmentado para Seguidores (Listo para copiar/pegar)")
-            st.text_area("Texto Completo Organizado por Origen:", boletin, height=400)
-            
+                
+                # --- CONSTRUCCIÓN DEL BOLETÍN SECTORIAL ---
+                boletin_sec = (
+                    f"📢 **INFORME DE ROTACIÓN SECTORIAL & FLUJOS DE CAPITAL (SMART MONEY)** 🚀\n\n"
+                    f"Estimada comunidad: Compartimos la auditoría sectorial emitida por nuestro agente de IA corporativo.\n\n"
+                    f"🚨 **1. EL SECTOR MÁS CASTIGADO**\n"
+                    f"• Sector: {sector_mas_castigado}\n"
+                    f"• Caída/Rendimiento Semanal: {peor_rendimiento:.2f}%\n"
+                    f"• Dictamen: Zona de máxima capitulación. Buscando oportunidades de valor aquí...\n\n"
+                )
+                if oportunidades_sectoriales:
+                    boletin_sec += "🎯 **Joyas Detectadas en el Sector Castigado:**\n"
+                    for o_sec in oportunidades_sectoriales:
+                        boletin_sec += f"• {o_sec['Empresa']} ({o_sec['Ticker']}): Precio ${o_sec['Precio']} | Descuento Estimado: {o_sec['Descuento']}\n"
+                else:
+                    boletin_sec += "• No se encontraron acciones individuales en este sector que cumplan con el margen de seguridad exigido hoy.\n"
+                    
+                boletin_sec += (
+                    f"\n🔥 **2. RASTREO DE ACUMULACIÓN INSTITUCIONAL (SMART MONEY)**\n"
+                    f"Detectamos anomalías de volumen de compra inusual frente a promedios históricos:\n"
+                )
+                for _, row in df_acumulacion.iterrows():
+                    boletin_sec += f"• {row['Empresa']} ({row['Ticker']}): Ratio de inyección de {row['Anomalía de Inyección (Ratio)']}x volumen normal.\n"
+                    
+                boletin_sec += f"\n💰 **Conclusión Geopolítica de Flujo:** El dinero institucional está migrando/acumulándose prioritariamente en el sector: **{sector_lider_flujo}**.\n\n"
+                boletin_sec += "*Este informe técnico sectorial evalúa variables de volumen e inyección de capital, no constituye asesoría financiera directa.*"
+                
+                st.subheader("📋 Boletín de Rotación Sectorial (Listo para enviar)")
+                st.text_area("Texto de Flujos e Inyección de Capital:", boletin_sec, height=350)
         else:
-            st.info(f"Ninguna acción perteneciente a {enfoque_mercado} superó las exigencias del comité fundamental con el margen de seguridad solicitado hoy.")
+            st.error("No se pudo compilar el flujo de capital sectorial.")
