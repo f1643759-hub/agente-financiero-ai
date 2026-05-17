@@ -1,12 +1,13 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import io
 
 # 1. Configuración de la Página
-st.set_page_config(page_title="Agente IA: Informes para Audiencias", layout="wide")
+st.set_page_config(page_title="Agente IA: Informes en Excel", layout="wide")
 
-st.title("🤖 Agente Financiero Pro: Generador de Informes para Seguidores")
-st.markdown("Auditoría de mercado con creación automática de boletines listos para enviar por correo o redes sociales.")
+st.title("🤖 Agente Financiero Pro: Generador de Informes en Excel")
+st.markdown("Auditoría de mercado con creación automática de boletines y reportes descargables en formato Excel (.xlsx).")
 st.markdown("---")
 
 # Barra lateral para monetización
@@ -73,11 +74,11 @@ with tab1:
 
 
 # =====================================================================
-# PESTAÑA 2: CAZADOR AUTOMÁTICO CON CRITERIOS DE LOS PADRES FUNDADORES + INFORME PARA SEGUIDORES
+# PESTAÑA 2: CAZADOR AUTOMÁTICO CON CRITERIOS DE MAESTROS GENERADOR DE EXCEL
 # =====================================================================
 with tab2:
     st.subheader("Cazador Multisectorial: Filtro de los Grandes Maestros")
-    st.write("El agente audita el mercado y redacta un boletín explicativo listo para enviar a tu comunidad.")
+    st.write("El agente audita el mercado y empaqueta un informe descargable directamente en formato nativo de Excel.")
     
     pool_mercado = [
         "AAPL", "MSFT", "GOOGL", "AMZN", "META", 
@@ -123,37 +124,35 @@ with tab2:
                     if valor_intrinseco > precio_actual and descuento >= margen_minimo:
                         
                         # Auditoría de los maestros
-                        aprobo_graham = "❌ Rechazado (Deuda alta)"
+                        aprobo_graham = "Rechazado (Deuda alta)"
                         if deuda_capital is not None and deuda_capital < 100:
-                            aprobo_graham = f"✅ Aprobado (Deuda baja de {deuda_capital:.1f}%)"
+                            aprobo_graham = f"Aprobado (Deuda baja de {deuda_capital:.1f}%)"
                             
-                        aprobo_buffett = "❌ Rechazado (ROE ineficiente)"
+                        aprobo_buffett = "Rechazado (ROE ineficiente)"
                         if roe is not None and roe >= 0.15:
-                            aprobo_buffett = f"✅ Aprobado (Excelente ROE de {roe*100:.1f}%)"
+                            aprobo_buffett = f"Aprobado (Excelente ROE de {roe*100:.1f}%)"
                             
-                        aprobo_lynch = "❌ Rechazado (Precio/Crecimiento alto)"
+                        aprobo_lynch = "Rechazado (Precio/Crecimiento alto)"
                         if peg_ratio is not None and peg_ratio <= 1.5:
-                            aprobo_lynch = f"✅ Aprobado (Buen precio relativo, PEG: {peg_ratio:.2f})"
+                            aprobo_lynch = f"Aprobado (Buen precio, PEG: {peg_ratio:.2f})"
                         elif peg_ratio is None:
-                            aprobo_lynch = "⚠️ Datos de crecimiento insuficientes"
+                            aprobo_lynch = "Datos de crecimiento insuficientes"
 
                         informe_maestros = (
-                            f"📌 **Benjamin Graham:** {aprobo_graham}. Margen de seguridad del {descuento:.1f}% (Valor Real: ${valor_intrinseco:.2f} vs Precio: ${precio_actual:.2f}).\n\n"
-                            f"📌 **Warren Buffett:** {aprobo_buffett}. Negocio con ventajas competitivas robustas dentro del sector {sector}.\n\n"
-                            f"📌 **Peter Lynch:** {aprobo_lynch}. Valora si el ritmo de ganancias futuras justifica lo que pagamos hoy."
+                            f"Graham: {aprobo_graham}. Margen de seguridad del {descuento:.1f}% (Valor Real: ${valor_intrinseco:.2f} vs Precio: ${precio_actual:.2f}). | "
+                            f"Buffett: {aprobo_buffett}. Ventajas competitivas en sector {sector}. | "
+                            f"Lynch: {aprobo_lynch}."
                         )
                         
                         oportunidades_encontradas.append({
                             "Ticker": t,
                             "Empresa": nombre,
                             "Sector": sector,
-                            "Precio": f"${precio_actual:.2f}",
-                            "Descuento Graham": f"{descuento:.1f}%",
-                            "Dictamen de los Grandes Inversores": informe_maestros,
-                            # Guardamos variables crudas para el redactor de informes
-                            "val_real": valor_intrinseco,
-                            "desc_num": descuento,
-                            "salud_deuda": "estable y controlada" if (deuda_capital and deuda_capital < 100) else "por vigilar"
+                            "Precio Actual": precio_actual,
+                            "Valor Real Estimado": round(valor_intrinseco, 2),
+                            "Descuento Presentado": f"{descuento:.1f}%",
+                            "Estructura Deuda": "Estable" if (deuda_capital and deuda_capital < 100) else "Vigilar",
+                            "Dictamen de los Grandes Inversores": informe_maestros
                         })
             except:
                 pass
@@ -163,42 +162,36 @@ with tab2:
         if oportunidades_encontradas:
             st.success(f"🎯 El Agente detectó {len(oportunidades_encontradas)} acciones con descuento óptimo.")
             
-            # --- CONSTRUCCIÓN DEL INFORME DETALLADO PARA SEGUIDORES ---
-            texto_boletin = (
-                "📢 **INFORME DE MERCADO: ALERTAS DE INVERSIÓN EN VALOR** 🚀\n"
-                "¡Hola a todos! Comparto con nuestra comunidad las oportunidades más atractivas detectadas hoy "
-                "por nuestro Agente de Inteligencia Artificial Financiera. Hemos auditado los sectores clave buscando "
-                "empresas sólidas que cotizan con un descuento importante respecto a su valor real real, cumpliendo los "
-                "requisitos de Graham, Buffett y Lynch.\n\n"
-                "---"
+            # Formatear el DataFrame para visualización e informe en Excel
+            df_oportunidades = pd.DataFrame(oportunidades_encontradas)
+            
+            # --- CONVERSIÓN EXCLUSIVA A ARCHIVO EXCEL DE MEMORIA INTERNA ---
+            buffer_excel = io.BytesIO()
+            with pd.ExcelWriter(buffer_excel, engine='openpyxl') as writer:
+                # Guardamos los datos limpios en una hoja llamada 'Alertas IA'
+                df_oportunidades.to_excel(writer, index=False, sheet_name='Alertas IA')
+            
+            buffer_excel.seek(0)
+            
+            # --- BOTÓN DE DESCARGA EN EXCEL DIRECTO ---
+            st.subheader("📥 Descarga el reporte para tus Seguidores")
+            st.download_button(
+                label="🟢 Descargar Informe Oficial en Excel (.xlsx)",
+                data=buffer_excel,
+                file_name='informe_maestros_inversion_ia.xlsx',
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             )
             
-            for item in oportunidades_encontradas:
-                texto_boletin += (
-                    f"\n\n🔥 **{item['Empresa']} ({item['Ticker']})**\n"
-                    f"• **Sector:** {item['Sector']}\n"
-                    f"• **Precio de Mercado Actual:** {item['Precio']}\n"
-                    f"• **Valor Intrínseco Real:** ${item['val_real']:.2f}\n"
-                    f"• **Descuento Presentado:** {item['Descuento Graham']} de Margen de Seguridad.\n"
-                    f"• **Diagnóstico de Salud Financiera:** La estructura de deudas se encuentra en estado *{item['salud_deuda']}*.\n"
-                    f"• **¿Por qué es una oportunidad?:** Cumple las reglas clásicas de inversión. Presenta una ventaja competitiva visible "
-                    f"en sus retornos operativos y su precio actual en Wall Street no está inflado respecto a lo que la empresa gana año con año.\n"
-                    f"---"
-                )
-                
-            texto_boletin += (
-                "\n\n*Nota: Recuerden que esto representa un análisis cuantitativo automatizado de salud financiera y valor. "
-                "Hagan siempre su propia gestión de riesgo antes de tomar decisiones operativas. ¡Buen éxito en sus inversiones!*"
-            )
-            
-            # Mostrar el bloque de texto listo para ser copiado
-            st.subheader("📋 Informe Ejecutivo Listo para Enviar a tus Seguidores")
-            st.text_area("Copia el texto de abajo y envíalo directamente por Correo, Telegram o Redes:", texto_boletin, height=450)
-            
-            # Mostrar además la tabla técnica que ya tenías
-            st.subheader("📊 Datos Técnicos del Escaneo")
-            df_oportunidades = pd.DataFrame(oportunidades_encontradas).drop(columns=['val_real', 'desc_num', 'salud_deuda'])
+            # Mostrar la vista previa en la aplicación web para el administrador
+            st.subheader("📊 Vista Previa de los Datos que incluye el Excel")
             st.dataframe(df_oportunidades, use_container_width=True)
+            
+            # Conservamos también la versión de boletín escrito por si deseas copiar texto rápido
+            texto_boletin = "📢 **INFORME DE MERCADO: ALERTAS DE INVERSIÓN EN VALOR**\n\n"
+            for item in oportunidades_encontradas:
+                texto_boletin += f"🔥 **{item['Empresa']} ({item['Ticker']})**\n• Sector: {item['Sector']}\n• Precio Actual: ${item['Precio Actual']}\n• Valor Real: ${item['Valor Real Estimado']}\n• Descuento: {item['Descuento Presentado']}\n---\n"
+            st.subheader("📋 Versión resumida para texto rápido:")
+            st.text_area("Copia rápida:", texto_boletin, height=200)
             
         else:
             st.info(f"Ninguna acción superó el {margen_minimo}% de descuento bajo las reglas combinadas en este momento.")
