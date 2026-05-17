@@ -4,10 +4,10 @@ import pandas as pd
 import io
 
 # Configuración de interfaz profesional
-st.set_page_config(page_title="Agente IA: Confluencia de Valor", layout="wide")
+st.set_page_config(page_title="Agente IA: Macro & Confluencia Global", layout="wide")
 
-st.title("🤖 Agente IA: Confluencia de Valor & Infraestructura")
-st.markdown("### El criterio definitivo de los Grandes Maestros combinado con auditoría de salud financiera.")
+st.title("🤖 Agente IA: Análisis de Índices Globales & Confluencia de Valor")
+st.markdown("### Auditoría institucionalizada: Diagnóstico macro de los 5 grandes índices combinada con selección estricta de acciones.")
 st.markdown("---")
 
 # Sección de Monetización en la barra lateral
@@ -15,14 +15,14 @@ st.sidebar.header("👑 Acceso Premium Alpha")
 st.sidebar.write("Recibe alertas institucionales y análisis de sectores emergentes de alta barrera de entrada.")
 st.sidebar.markdown("[👉 Suscribirse al Boletín VIP](https://substack.com)") 
 
-tab1, tab2 = st.tabs(["🔍 Auditoría Manual", "🛰️ Radar de Confluencia Multisectorial"])
+tab1, tab2 = st.tabs(["🔍 Auditoría Manual", "🛰️ Radar Macroeconómico e Índices de Mercado"])
 
 # =====================================================================
-# PESTAÑA 1: ANÁLISIS MANUAL
+# PESTAÑA 1: ANÁLISIS MANUAL (Función original intacta)
 # =====================================================================
 with tab1:
     st.subheader("Auditoría personalizada de activos")
-    tickers_input = st.text_input("Introduce los tickers clave (ej: GOOGL, V, NKE, TGT, CEG):", "GOOGL, V, NKE, TGT")
+    tickers_input = st.text_input("Introduce los tickers clave (ej: GOOGL, V, NKE, TGT):", "GOOGL, V, NKE, TGT")
     lista_tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
 
     if st.button("🚀 Ejecutar Análisis de Confluencia", key="btn_manual"):
@@ -65,31 +65,78 @@ with tab1:
                 st.dataframe(pd.DataFrame(resultados), use_container_width=True)
 
 # =====================================================================
-# PESTAÑA 2: RADAR MULTISECTORIAL PROPIO (A mi gusto y manera)
+# PESTAÑA 2: RADAR MACROECONÓMICO DE ÍNDICES + ACCIONES & SMALL CAPS
 # =====================================================================
 with tab2:
-    st.subheader("🛰️ Escáner de Activos de Alta Calidad e Infraestructura")
-    st.write("Este radar busca en un pool seleccionado que incluye gigantes tecnológicos, consumo defensivo y el sector clave de **Infraestructura Energética e Inteligencia Artificial**.")
+    st.subheader("🛰️ Sistema de Rastreo de Índices y Filtro Fundamental en Tiempo Real")
+    st.write("El agente ejecutará primero un diagnóstico de salud técnica de los 5 índices principales de EE.UU. y luego buscará oportunidades individuales bajo las reglas de Graham, Buffett y Lynch.")
     
-    # Pool seleccionado a mi gusto: Grandes maestros + Infraestructura Crítica (CEG, OKLO)
-    pool_agente = [
-        "GOOGL", "MSFT", "AAPL", "META",        # Big Tech e Infraestructura Digital
-        "CEG", "OKLO",                           # Energía Nuclear / Infraestructura de Datos
-        "V", "MA", "JPM",                        # Monopolios Financieros y de Crédito
-        "NKE", "TGT", "PG", "KO",                # Consumo Líder y Cadenas de Reversión (Snowball)
-        "JNJ", "UNH"                             # Salud Defensiva
-    ]
+    enfoque_mercado = st.selectbox(
+        "Selecciona el universo de mercado a auditar hoy:",
+        ["Grandes Líderes del Mercado (S&P 500 + Infraestructura)", "Joyas de Crecimiento (Small Caps / Russell 2000)", "Escanear Todo el Mercado Integrado"]
+    )
     
-    margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 15, 40, 20)
+    margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 15, 40, 20, key="slider_macro")
 
-    if st.button("🛰️ Activar Radar de Confluencia", key="btn_auto"):
+    if st.button("🛰️ Lanzar Algoritmo de Búsqueda Global", key="btn_auto"):
+        
+        # 1. ANÁLISIS EN VIVO DE LOS 5 GRANDES ÍNDICES
+        st.subheader("📊 Diagnóstico Técnico de los Índices del Mercado")
+        indices_dict = {
+            "S&P 500 🏢": "^GSPC",
+            "Dow Jones 🏗️": "^DJI",
+            "NASDAQ Composite 💻": "^IXIC",
+            "NASDAQ 100 🚀": "^NDX",
+            "Russell 2000 (Small Caps) 🌱": "^RUT"
+        }
+        
+        analisis_indices = []
+        with st.spinner("Agente auditando la tendencia macroeconómica de los índices..."):
+            for nombre_ind, ticker_ind in indices_dict.items():
+                try:
+                    ind = yf.Ticker(ticker_ind)
+                    hist = ind.history(period="5d")
+                    if len(hist) >= 2:
+                        precio_actual = hist['Close'].iloc[-1]
+                        precio_previo = hist['Close'].iloc[-2]
+                        cambio_diario = ((precio_actual - precio_previo) / precio_previo) * 100
+                        
+                        # Tendencia básica semanal
+                        precio_inicial = hist['Close'].iloc[0]
+                        tendencia_5d = "📈 Alcista" if precio_actual > precio_inicial else "📉 Bajista"
+                        
+                        analisis_indices.append({
+                            "Índice": nombre_ind,
+                            "Nivel de Cierre": round(precio_actual, 2),
+                            "Cambio Diario": f"{cambio_diario:+.2f}%",
+                            "Tendencia Corto Plazo": tendencia_5d
+                        })
+                except:
+                    pass
+        
+        df_indices = pd.DataFrame(analisis_indices)
+        if not df_indices.empty:
+            st.dataframe(df_indices, use_container_width=True)
+        else:
+            st.warning("No se pudo extraer la información en tiempo real de los índices.")
+
+        # 2. DEFINICIÓN DEL POOL DE ACCIONES INDIVIDUALEZ SEGÚN TU SELECCIÓN
+        with st.spinner("Mapeando el mapa de activos seleccionados..."):
+            if enfoque_mercado == "Grandes Líderes del Mercado (S&P 500 + Infraestructura)":
+                pool_dinamico = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "V", "MA", "PG", "KO", "NKE", "TGT", "CEG", "OKLO"]
+            elif enfoque_mercado == "Joyas de Crecimiento (Small Caps / Russell 2000)":
+                pool_dinamico = ["CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "UFPI", "SKX", "CALM"]
+            else:
+                pool_dinamico = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "V", "MA", "PG", "KO", "NKE", "TGT", "CEG", "OKLO", "CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "UFPI", "SKX", "CALM"]
+
         oportunidades = []
         progress = st.progress(0)
         status = st.empty()
         
-        for idx, t in enumerate(pool_agente):
-            status.text(f"Agente evaluando foso competitivo y liquidez de: {t}...")
-            progress.progress((idx + 1) / len(pool_agente))
+        # 3. FILTRO INDIVIDUAL DE ACCIONES Y SMALL CAPS DE CRECIMIENTO
+        for idx, t in enumerate(pool_dinamico):
+            status.text(f"Auditoría fundamental en vivo (Graham/Buffett/Lynch): {t}...")
+            progress.progress((idx + 1) / len(pool_dinamico))
             
             try:
                 ticker = yf.Ticker(t)
@@ -103,88 +150,110 @@ with tab2:
                 deuda_capital = info.get('debtToEquity', None)
                 roe = info.get('returnOnEquity', None)
                 peg = info.get('pegRatio', None)
+                cap_mercado = info.get('marketCap', 0)
+                crecimiento_ganancias = info.get('earningsGrowth', None)
                 
-                crecimiento = info.get('earningsGrowth', 0.05) or 0.05
-                if crecimiento <= 0: crecimiento = 0.05
+                crecimiento_calculo = crecimiento_ganancias or 0.05
+                if crecimiento_calculo <= 0: crecimiento_calculo = 0.05
                 
                 if eps and eps > 0:
-                    valor_intrinseco = eps * (8.5 + (2 * (crecimiento * 100)))
+                    valor_intrinseco = eps * (8.5 + (2 * (crecimiento_calculo * 100)))
                     descuento = ((valor_intrinseco - precio) / valor_intrinseco) * 100
                     
-                    # FILTRO ESTRICTO DEL AGENTE: Valor con descuento + Salud básica
                     if valor_intrinseco > precio and descuento >= margen_exigido:
                         
-                        # Evaluación de Criterios
-                        c_graham = "CUMPLE" if (deuda_capital and deuda_capital < 100) else "RIESGO"
-                        c_buffett = "CUMPLE" if (roe and roe >= 0.15) else "SIN MOAT"
-                        c_lynch = "CUMPLE" if (peg and peg <= 1.5) else "AJUSTADO"
+                        is_small_cap = cap_mercado < 6000000000
+                        tipo_empresa = "Small Cap de Crecimiento 🚀" if is_small_cap else "Large/Mega Cap 🏢"
+                        
+                        # Cortafuegos crítico: Descartar de forma autónoma Small Caps sin crecimiento verificado
+                        if is_small_cap and (crecimiento_ganancias is None or crecimiento_ganancias <= 0.02):
+                            continue 
+                        
+                        # Evaluación combinada institucional
+                        cumple_graham = "✅ CUMPLE (Baja Deuda)" if (deuda_capital and deuda_capital < 100) else "❌ RIESGO (Apalancada)"
+                        cumple_buffett = "✅ CUMPLE (Moat Sólido)" if (roe and roe >= 0.15) else "❌ SIN MOAT (Bajo ROE)"
+                        cumple_lynch = "✅ CUMPLE (Buen Precio)" if (peg and peg <= 1.5) else "❌ AJUSTADO (Múltiplo Alto)"
+                        
+                        tasa_str = f"{crecimiento_ganancias*100:.1f}%" if crecimiento_ganancias else "N/D (Est. 5%)"
                         
                         informe_ejecutivo = (
-                            f"Análisis del Sector: {sector}. "
-                            f"La empresa cotiza a ${precio:.2f} con un Valor Intrínseco de ${valor_intrinseco:.2f}, "
-                            f"ofreciendo un Margen de Seguridad del {descuento:.1f}%.\n"
-                            f"• Filtro Graham (Deuda): {c_graham} (Relación: {deuda_capital if deuda_capital else 'N/D'}%)\n"
-                            f"• Filtro Buffett (Eficiencia): {c_buffett} (ROE: {f'{roe*100:.1f}%' if roe else 'N/D'})\n"
-                            f"• Filtro Lynch (Crecimiento/Precio): {c_lynch} (PEG: {peg if peg else 'N/D'})"
+                            f"Sector: {sector} ({tipo_empresa}). Expansión Trimestral: {tasa_str}.\n"
+                            f"Fórmula Graham-Lynch: Valor Intrínseco de ${valor_intrinseco:.2f} vs Cotización de ${precio:.2f} "
+                            f"({descuento:.1f}% Margen de Seguridad).\n"
+                            f"• Filtro Graham: {cumple_graham} (Relación: {deuda_capital if deuda_capital else 'N/D'}%)\n"
+                            f"• Filtro Buffett: {cumple_buffett} (ROE: {f'{roe*100:.1f}%' if roe else 'N/D'})\n"
+                            f"• Filtro Peter Lynch: {cumple_lynch} (PEG: {peg if peg else 'N/D'})"
                         )
                         
                         oportunidades.append({
                             "Ticker": t,
                             "Empresa": nombre,
                             "Sector": sector,
+                            "Categoría": tipo_empresa,
                             "Precio Actual": precio,
+                            "Crecimiento Beneficios": tasa_str,
                             "Valor Real Estimado": round(valor_intrinseco, 2),
                             "Margen de Seguridad": f"{descuento:.1f}%",
-                            "Evaluación del Comité": informe_ejecutivo
+                            "Dictamen del Agente": informe_ejecutivo
                         })
             except:
                 pass
                 
-        status.text("¡Escaneo estratégico finalizado!")
+        status.text("¡Auditoría de espectro completo e índices finalizada!")
         
+        # 4. ENTREGA DE RESULTADOS MULTI-FORMATO (EXCEL CON PESTAÑAS Y BOLETÍN)
         if oportunidades:
-            st.success(f"🎯 Se detectaron {len(oportunidades)} activos con confluencia de valor real.")
+            st.success(f"🎯 El Agente detectó {len(oportunidades)} acciones individuales que superan los filtros.")
             df_final = pd.DataFrame(oportunidades)
             
-            # --- CREACIÓN EXCEL NATIVO EN MEMORIA ---
+            # --- CREACIÓN EXCEL NATIVO AVANZADO CON MÚLTIPLES HOJAS ---
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_final.to_excel(writer, index=False, sheet_name='Oportunidades Alfa')
+                # Hoja 1: Diagnóstico de Índices del mercado
+                df_indices.to_excel(writer, index=False, sheet_name='Estado de Índices Macro')
+                # Hoja 2: Acciones individuales baratas y Small Caps filtradas
+                df_final.to_excel(writer, index=False, sheet_name='Acciones Filtradas IA')
             buffer.seek(0)
             
-            # Botón de Descarga Oficial
+            st.subheader("📥 Descarga de Herramientas Profesionales")
             st.download_button(
-                label="🟢 Descargar Reporte Maestro en Excel (.xlsx)",
+                label="🟢 Descargar Reporte Completo (Índices + Acciones) en Excel (.xlsx)",
                 data=buffer,
-                file_name='reporte_confluencia_valor.xlsx',
+                file_name='reporte_macro_y_confluencia_ia.xlsx',
                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             )
             
-            # Tabla Visual para el administrador de la plataforma
+            st.subheader("📊 Vista Previa de Acciones Filtradas")
             st.dataframe(df_final, use_container_width=True)
             
-            # --- REDACCIÓN DE BOLETÍN DE FÁCIL COMPRENSIÓN ---
+            # --- CONSTRUCCIÓN DEL BOLETÍN INTEGRAL PARA SEGUIDORES ---
             boletin = (
-                "📈 **INFORME MAESTRO: RADAR ALFA DE INVERSIÓN** 🚀\n\n"
-                "Estimada comunidad: Comparto el análisis sectorial de nuestro Agente de IA. "
-                "Buscamos negocios con ventajas competitivas masivas que coticen con un Margen de Seguridad real "
-                "frente a la volatilidad del mercado.\n"
-                "======================================================\n"
+                f"📢 **INFORME ESTRATÉGICO GLOBAL: ÍNDICES MACRO & CONFLUENCIA FINANCIERA** 🚀\n\n"
+                f"Estimada comunidad: Compartimos el reporte consolidado de nuestro Agente de IA.\n\n"
+                f"⚖️ **1. SALUD MACROECONÓMICA DEL MERCADO (ÍNDICES)**\n"
+            )
+            for idx_row in analisis_indices:
+                boletin += f"• {idx_row['Índice']}: Cierre en {idx_row['Nivel de Cierre']} | Variación Diaria: {idx_row['Cambio Diario']} | Tendencia: {idx_row['Tendencia Corto Plazo']}\n"
+                
+            boletin += (
+                f"\n🎯 **2. JOYAS INDIVIDUALES DETECTADAS (FILTRO DE LOS MAESTROS)**\n"
+                f"Sometimos el mercado al criterio de Graham, Buffett y Peter Lynch buscando valor e inversión estricta en Small Caps de crecimiento.\n"
+                f"======================================================\n"
             )
             for op in oportunidades:
                 boletin += (
                     f"\n💎 **{op['Empresa']} ({op['Ticker']})**\n"
-                    f"• Sector de Operación: {op['Sector']}\n"
-                    f"• Precio de Cotización: ${op['Precio Actual']:.2f}\n"
-                    f"• Valor Intrínseco Calculado: ${op['Valor Real Estimado']:.2f}\n"
-                    f"• Brecha de Descuento: {op['Margen de Seguridad']}\n"
-                    f"• Dictamen Interno:\n{op['Evaluación del Comité']}\n"
+                    f"• Sector y Categoría: {op['Sector']} | {op['Categoría']}\n"
+                    f"• Expansión Real de Beneficios: {op['Crecimiento Beneficios']}\n"
+                    f"• Precio de Cotización: ${op['Precio Actual']:.2f} | Valor Real Estimado: ${op['Valor Real Estimado']:.2f}\n"
+                    f"• Margen de Seguridad Presentado: {op['Margen de Seguridad']}\n"
+                    f"• Dictamen de Auditoría:\n{op['Dictamen del Agente']}\n"
                     f"------------------------------------------------------\n"
                 )
-            boletin += "\n*Este informe técnico automatizado evalúa variables financieras e infraestructura, no constituye asesoría financiera directa.*"
+            boletin += "\n*Este informe técnico automatizado evalúa variables financieras macro e institucionales, no constituye asesoría financiera directa.*"
             
-            st.subheader("📋 Boletín para Seguidores (Listo para copiar/pegar)")
-            st.text_area("Texto del Reporte:", boletin, height=350)
+            st.subheader("📋 Boletín Integral para Seguidores (Listo para copiar/pegar)")
+            st.text_area("Texto Completo (Índices + Acciones):", boletin, height=400)
             
         else:
-            st.info("Ningún activo de la lista cumple con el margen de seguridad exigido en este momento.")
+            st.info("El escáner de acciones no arrojó resultados con el margen exigido, pero puedes ver arriba el estado técnico de los índices.")
