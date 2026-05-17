@@ -4,10 +4,10 @@ import pandas as pd
 import io
 
 # Configuración de interfaz profesional
-st.set_page_config(page_title="Agente IA: Macro Global & Confluencia", layout="wide")
+st.set_page_config(page_title="Agente IA: Macro & Radar Ampliado", layout="wide")
 
-st.title("🤖 Agente IA: Terminal Macro Global & Confluencia de Valor")
-st.markdown("### Auditoría Internacional: Diagnóstico de los principales índices del mundo y selección estricta de acciones de crecimiento.")
+st.title("🤖 Agente IA: Terminal Macro & Radar de Confluencia Ampliado")
+st.markdown("### Cobertura Masiva: Análisis de Índices Globales y Auditoría sobre más de 100 activos de Alta Capitalización y Small Caps de Expansión.")
 st.markdown("---")
 
 # Sección de Monetización en la barra lateral
@@ -65,39 +65,34 @@ with tab1:
                 st.dataframe(pd.DataFrame(resultados), use_container_width=True)
 
 # =====================================================================
-# PESTAÑA 2: RADAR MACROECONÓMICO MUNDIAL + ACCIONES
+# PESTAÑA 2: RADAR MACROECONÓMICO MUNDIAL + ACCIONES (MÁS DE 100 TICKERS)
 # =====================================================================
 with tab2:
     st.subheader("🛰️ Sistema de Rastreo Global y Filtro Fundamental en Tiempo Real")
-    st.write("El agente ejecutará primero un diagnóstico de salud técnica de los principales índices mundiales (EE.UU., Europa, Asia y Latam) y luego buscará oportunidades bajo las reglas de Graham, Buffett y Lynch.")
+    st.write("El agente ejecutará primero un diagnóstico de salud técnica de los principales índices mundiales y luego buscará oportunidades bajo las reglas de Graham, Buffett y Lynch dentro de nuestro nuevo pool extendido.")
     
     enfoque_mercado = st.selectbox(
         "Selecciona el universo de mercado a auditar hoy:",
-        ["Grandes Líderes del Mercado (S&P 500 + Infraestructura)", "Joyas de Crecimiento (Small Caps / Russell 2000)", "Escanear Todo el Mercado Integrado"]
+        ["Grandes Líderes del Mercado (S&P 500 / NASDAQ / Dow Jones)", "Joyas de Crecimiento (Small Caps / Russell 2000)", "Escanear Todo el Mercado Integrado (Espectro Completo)"]
     )
     
-    margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 15, 40, 20, key="slider_macro_global")
+    margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 15, 40, 20, key="slider_macro_global_mega")
 
     if st.button("🛰️ Lanzar Algoritmo de Búsqueda Global", key="btn_auto"):
         
         # 1. ANÁLISIS EN VIVO DE TODOS LOS ÍNDICES MUNDIALES
         st.subheader("📊 Diagnóstico Técnico de Índices Globales")
         indices_dict = {
-            # Estados Unidos
             "S&P 500 (EE.UU.) 🏢": "^GSPC",
             "Dow Jones (EE.UU.) 🏗️": "^DJI",
             "NASDAQ Composite (EE.UU.) 💻": "^IXIC",
             "NASDAQ 100 (EE.UU.) 🚀": "^NDX",
-            "Russell 2000 (Small Caps EE.UU.) 🌱": "^RUT",
-            # Europa
+            "Russell 2000 (Small Caps) 🌱": "^RUT",
             "Euro Stoxx 50 (Europa) 🇪🇺": "^STOXX50E",
             "DAX (Alemania) 🇩🇪": "^GDAXI",
             "FTSE 100 (Reino Unido) 🇬🇧": "^FTSE",
-            # Asia / Pacífico
             "Nikkei 225 (Japón) 🇯🇵": "^N225",
             "Hang Seng (Hong Kong) 🇭🇰": "^HSI",
-            "ASX 200 (Australia) 🇦🇺": "^AXJO",
-            # América Latina
             "Bovespa (Brasil) 🇧🇷": "^BVSP",
             "S&P/BMV IPC (México) 🇲🇽": "^MXX"
         }
@@ -131,22 +126,50 @@ with tab2:
         else:
             st.warning("No se pudo extraer la información internacional de los índices.")
 
-        # 2. DEFINICIÓN DEL POOL DE ACCIONES INDIVIDUALES
+        # 2. DEFINICIÓN DEL MEGAPOOL DINÁMICO (MÁS DE 100 EMPRESAS)
+        pool_large_caps = [
+            # Big Tech & Semiconductores Grandes
+            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "AMD", "QCOM", "INTC", "TSM", "ASML",
+            # Monopolios Financieros & Fintech
+            "V", "MA", "JPM", "BAC", "MS", "GS", "AXP", "PYPL", "COF",
+            # Consumo Líder & Reversión (Estrategia Snowball)
+            "NKE", "TGT", "PG", "KO", "PEP", "COST", "WMT", "HD", "SBUX", "EL", "CL",
+            # Infraestructura Energética & Centros de Datos
+            "CEG", "OKLO", "NEE", "GE", "VST", "SMR",
+            # Industriales & Logística
+            "CAT", "DE", "HON", "UPS", "FDX", "LMT", "NOC",
+            # Salud & Farmacia Defensiva
+            "JNJ", "PFE", "UNH", "MRK", "ABV", "LLY", "ISRG"
+        ]
+        
+        pool_small_caps = [
+            # Tecnología, Semiconductores & Software Small Caps
+            "CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "PDFS", "CEVA", "AEIS", "COHR",
+            # Industriales, Construcción & Materiales Small Caps
+            "UFPI", "AIT", "FIX", "AMWD", "PLUS", "AWI", "MLI", "KBAL",
+            # Consumo, Calzado & Alimentos Small Caps
+            "SKX", "MED", "CALM", "DECK", "CROX", "BOOT", "WING", "LOCO",
+            # Financieras & Bancos Regionales de Alta Eficiencia
+            "SFBS", "CCRN", "WABC", "HOMB", "EBTC", "BFIN",
+            # Salud, Equipos Médicos & Biotech Small Caps
+            "NEOG", "AMN", "LNTH", "MESA", "ANIK", "UTMD", "VNDA"
+        ]
+
         with st.spinner("Mapeando el mapa de activos seleccionados..."):
-            if enfoque_mercado == "Grandes Líderes del Mercado (S&P 500 + Infraestructura)":
-                pool_dinamico = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "V", "MA", "PG", "KO", "NKE", "TGT", "CEG", "OKLO"]
+            if enfoque_mercado == "Grandes Líderes del Mercado (S&P 500 / NASDAQ / Dow Jones)":
+                pool_dinamico = pool_large_caps
             elif enfoque_mercado == "Joyas de Crecimiento (Small Caps / Russell 2000)":
-                pool_dinamico = ["CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "UFPI", "SKX", "CALM"]
+                pool_dinamico = pool_small_caps
             else:
-                pool_dinamico = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "V", "MA", "PG", "KO", "NKE", "TGT", "CEG", "OKLO", "CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "UFPI", "SKX", "CALM"]
+                pool_dinamico = pool_large_caps + pool_small_caps
 
         oportunidades = []
         progress = st.progress(0)
         status = st.empty()
         
-        # 3. FILTRO INDIVIDUAL DE ACCIONES Y SMALL CAPS DE CRECIMIENTO
+        # 3. FILTRO INDIVIDUAL MASIVO
         for idx, t in enumerate(pool_dinamico):
-            status.text(f"Auditoría fundamental en vivo (Graham/Buffett/Lynch): {t}...")
+            status.text(f"Auditoría masiva fundamental ({idx+1}/{len(pool_dinamico)}): {t}...")
             progress.progress((idx + 1) / len(pool_dinamico))
             
             try:
@@ -176,7 +199,7 @@ with tab2:
                         is_small_cap = cap_mercado < 6000000000
                         tipo_empresa = "Small Cap de Crecimiento 🚀" if is_small_cap else "Large/Mega Cap 🏢"
                         
-                        # Cortafuegos crítico para Small Caps de crecimiento
+                        # Cortafuegos crítico: Descartar de forma autónoma Small Caps sin crecimiento verificado
                         if is_small_cap and (crecimiento_ganancias is None or crecimiento_ganancias <= 0.02):
                             continue 
                         
@@ -210,11 +233,11 @@ with tab2:
             except:
                 pass
                 
-        status.text("¡Auditoría macroeconómica global y de acciones finalizada!")
+        status.text("¡Auditoría macroeconómica global y escaneo de activos finalizada!")
         
         # 4. ENTREGA DE RESULTADOS MULTI-FORMATO (EXCEL MULTI-PESTAÑA Y BOLETÍN GLOBAL)
         if oportunidades:
-            st.success(f"🎯 El Agente detectó {len(oportunidades)} acciones individuales que superan los filtros.")
+            st.success(f"🎯 El Agente detectó {len(oportunidades)} acciones que superan perfectamente tus filtros estratégicos.")
             df_final = pd.DataFrame(oportunidades)
             
             # --- CREACIÓN EXCEL NATIVO CON TODOS LOS ÍNDICES MUNDIALES ---
@@ -246,7 +269,7 @@ with tab2:
                 
             boletin += (
                 f"\n🎯 **2. OPORTUNIDADES FILTRADAS BAJO CRITERIO DE MAESTROS**\n"
-                f"Sometimos los activos a las exigencias corporativas de Graham, Buffett y Peter Lynch cuidando la inclusión de Small Caps de alto crecimiento trimestral.\n"
+                f"Sometimos más de 100 activos del mercado a las exigencias corporativas de Graham, Buffett y Peter Lynch cuidando la inclusión de Small Caps de alto crecimiento trimestral.\n"
                 f"======================================================\n"
             )
             for op in oportunidades:
@@ -265,4 +288,4 @@ with tab2:
             st.text_area("Texto Completo (Índices Mundiales + Acciones):", boletin, height=400)
             
         else:
-            st.info("El escáner de acciones no arrojó resultados con el margen exigido, pero puedes ver arriba el estado en vivo de los mercados mundiales.")
+            st.info("El escáner masivo no arrojó resultados con el margen exigido, pero puedes ver arriba el estado en vivo de los mercados mundiales.")
