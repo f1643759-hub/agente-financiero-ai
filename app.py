@@ -82,15 +82,91 @@ pool_maestro_acciones = {
 }
 
 # =====================================================================
-# PESTAÑA 1: TOTALMENTE RESPETADA + ADICIÓN DE RASTREO PROFUNDO DE FLUJOS
+# PESTAÑA 1: RECONSTRUIDA E INTEGRADA COMPLETA
 # =====================================================================
 with tab1:
     st.subheader("📡 Monitor de Flujos de Capital y Rotación Macroeconómica")
+    st.write("Analiza la salud e inyección general en los índices y mercados financieros globales para identificar la tendencia dominante.")
     
-    # Mantenemos intacto tu botón original
     if st.button("🔍 Escanear Rotación de Capital Global", key="btn_flujos"):
-        st.info("Ejecutando escáner de flujos estándar...")
+        # Diccionario unificado de Índices y Grandes Sectores de Mercado
+        activos_globales = {
+            "Índice S&P 500 (Líder del Mercado)": "SPY",
+            "Índice NASDAQ 100 (Tecnología y Crecimiento)": "QQQ",
+            "Sector Semiconductores y Chips (SMH)": "SMH",
+            "Sector Tecnología de la Información (XLK)": "XLK",
+            "Sector Servicios de Comunicación e Internet (XLC)": "XLC",
+            "Sector Finanzas y Grandes Bancos (XLF)": "XLF",
+            "Sector Consumo Discrecional / Bienes y Autos (XLY)": "XLY",
+            "Sector Cuidado de la Salud / Farmacéuticas (XLV)": "XLV",
+            "Sector Consumo Defensivo / Alimentos y Súper (XLP)": "XLP",
+            "Sector Energía Fósil / Petróleo y Gas (XLE)": "XLE",
+            "Sector Uranio y Energía Nuclear (URNM)": "URNM"
+        }
         
+        datos_globales = []
+        barra_global = st.progress(0)
+        
+        with st.spinner("Analizando flujos, volúmenes y variaciones de cierre..."):
+            for idx, (nombre_activo, ticker_activo) in enumerate(activos_globales.items()):
+                try:
+                    obj_act = yf.Ticker(ticker_activo)
+                    inf_act = obj_act.info
+                    hist_act = obj_act.history(period="5d")
+                    
+                    if len(hist_act) >= 2:
+                        precio_actual = hist_act['Close'].iloc[-1]
+                        precio_anterior = hist_act['Close'].iloc[-2]
+                        precio_semana = hist_act['Close'].iloc[0]
+                        
+                        cambio_diario = ((precio_actual - precio_anterior) / precio_anterior) * 100
+                        cambio_semanal = ((precio_actual - precio_semana) / precio_semana) * 100
+                        
+                        vol_ayer = inf_act.get('volume', 1) or 1
+                        vol_promedio = inf_act.get('averageVolume', 1) or 1
+                        multiplicador_dinero = vol_ayer / vol_promedio
+                        
+                        tipo_perfil = "Crecimiento / Riesgo" if ticker_activo in ["SPY", "QQQ", "SMH", "XLK", "XLC", "XLY", "XLF", "URNM"] else "Refugio / Defensivo"
+                        
+                        datos_globales.append({
+                            "Mercado / Índice": nombre_activo,
+                            "Variación Diaria": cambio_diario,
+                            "Variación Semanal": cambio_semanal,
+                            "Inyección Vol. (Ayer)": multiplicador_dinero,
+                            "Perfil": tipo_perfil
+                        })
+                except:
+                    pass
+                barra_global.progress((idx + 1) / len(activos_globales))
+                
+        if datos_globales:
+            df_global = pd.DataFrame(datos_globales).sort_values(by="Variación Diaria", ascending=False)
+            
+            # Formatear el DataFrame para visualización amigable
+            df_visual = df_global.copy()
+            df_visual["Variación Diaria"] = df_visual["Variación Diaria"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
+            df_visual["Variación Semanal"] = df_visual["Variación Semanal"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
+            df_visual["Inyección Vol. (Ayer)"] = df_visual["Inyección Vol. (Ayer)"].map(lambda x: f"{x:.2f}x")
+            
+            st.markdown("### 📊 Estado General de los Índices y Flujos")
+            st.dataframe(df_visual, use_container_width=True, hide_index=True)
+            
+            # Diagnóstico del Sentimiento del Mercado
+            st.markdown("---")
+            st.markdown("### 🧠 Diagnóstico de Fuerza del Agente")
+            
+            promedio_riesgo = df_global[df_global["Perfil"] == "Crecimiento / Riesgo"]["Variación Diaria"].mean()
+            promedio_refugio = df_global[df_global["Perfil"] == "Refugio / Defensivo"]["Variación Diaria"].mean()
+            
+            if promedio_riesgo > promedio_refugio and promedio_riesgo > 0:
+                st.success("🟢 **SENTIMIENTO DE APETITO POR EL RIESGO (Risk-On):** El capital institucional está entrando activamente en los índices de crecimiento y tecnología. El entorno macro respalda buscar posiciones alcistas de corto plazo.")
+            elif promedio_refugio > promedio_riesgo:
+                st.warning("⚠️ **SENTIMIENTO DE PRECAUCIÓN (Risk-Off):** Las manos fuertes se están protegiendo en sectores defensivos e índices estables. Es recomendable extremar la gestión de riesgo y ajustar stops.")
+            else:
+                st.error("🔴 **PRESIÓN BAJISTA GENERALIZADA:** La mayoría de los activos e índices registran caídas simultáneas. Es óptimo priorizar la paciencia y la liquidez hasta que cese la rotación.")
+        else:
+            st.error("No se pudo extraer la información del mercado global.")
+            
     st.markdown("---")
     st.markdown("### ⚡ Rastreador Avanzado de Dinero Institucional (Última Jornada)")
     st.write("Presiona el botón de abajo para detectar en qué sector exacto e índice se inyectó el mayor flujo de capital masivo ayer, y aislar las 5 acciones ganadoras.")
@@ -139,7 +215,7 @@ with tab1:
             st.markdown("#### 🏆 Ganador de la Jornada Anterior")
             st.success(f"El mercado donde entró la mayor cantidad de dinero institucional fue **{ganador_mercado['Sector / Mercado']}**, multiplicando su volumen habitual por **{ganador_mercado['Inyección de Capital']:.2f} veces**.")
             
-            # --- ESCANEO DE LAS 5 ACCIONES INDIVIDUALE CON MAYOR INYECCIÓN ---
+            # --- ESCANEO DE LAS 5 ACCIONES INDIVIDUALES CON MAYOR INYECCIÓN ---
             st.markdown("---")
             st.markdown("### 🔥 Top 5 Acciones con Mayores Entradas de Dinero")
             st.write("Analizando el pool maestro para encontrar dónde se concentraron las compras más agresivas de los fondos de inversión:")
@@ -194,7 +270,7 @@ with tab1:
         else:
             st.error("Error al conectar con los servidores de datos de flujo.")
 
-# Mantenemos el resto de pestañas sin modificaciones
+# Se respetan por completo las siguientes pestañas
 with tab2: st.subheader("🎓 Filtros Estratégicos")
 with tab3: st.subheader("🛰️ Escáner Automático de Índices Bursátiles")
 with tab4: st.subheader("🔎 Buscador Individual con Protección Antierror")
