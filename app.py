@@ -266,14 +266,14 @@ with tab1:
             st.error("Error al conectar con los servidores de datos de flujo.")
 
 # =====================================================================
-# PESTAÑA 2: FILTROS ESTRATÉGICOS (Mantenida funcional)
+# PESTAÑA 2: FILTROS ESTRATÉGICOS
 # =====================================================================
 with tab2:
     st.subheader("🎓 Filtros Estratégicos Automatizados: Leyendas de Wall Street")
     st.write("Filtra las acciones según los principios fundamentales de Benjamin Graham y Warren Buffett buscando solidez financiera.")
 
 # =====================================================================
-# PESTAÑA 3: ESCÁNER DE ÍNDICES COMPLETO TRADUCIDO
+# PESTAÑA 3: ESCÁNER DE ÍNDICES COMPLETO
 # =====================================================================
 with tab3:
     st.subheader("🛰️ Escáner Automático de Índices Bursátiles")
@@ -364,15 +364,17 @@ with tab3:
                     st.info(f"💎 **{r['Nombre de la Empresa']} ({r['Código']})** | Descuento: **{r['🚨 Descuento de Protección (Margen)']:.1f}%**")
 
 # =====================================================================
-# PESTAÑA 4: BUSCADOR INDIVIDUAL ANTIERROR TRADUCIDO
+# PESTAÑA 4: OPTIMIZADA CON ESCÁNER AUTOMÁTICO DE SECTOR (TOP 5 CORTO PLAZO)
 # =====================================================================
 with tab4:
-    st.subheader("🔎 Buscador Individual con Protección Antierror")
+    st.subheader("🔎 Buscador Individual y Competitivo de Corto Plazo")
+    st.write("Selecciona una acción guía. El agente identificará su sector y analizará el Pool Maestro para ordenarte las mejores opciones de inversión inmediatas.")
+    
     col_cap1, col_cap2 = st.columns(2)
     with col_cap1:
-        capital_total = st.number_input("Dinero total en tu cuenta (USD):", min_value=10.0, value=2000.0, step=50.0)
+        capital_total = st.number_input("Dinero total en tu cuenta (USD):", min_value=10.0, value=2000.0, step=50.0, key="p4_capital")
     with col_cap2:
-        riesgo_maximo = st.slider("¿Qué porcentaje máximo permites arriesgar si sale mal?", 0.5, 5.0, 1.0, 0.5)
+        riesgo_maximo = st.slider("¿Qué porcentaje máximo permites arriesgar si sale mal?", 0.5, 5.0, 1.0, 0.5, key="p4_riesgo")
 
     st.markdown("---")
     
@@ -387,81 +389,146 @@ with tab4:
         "Google": "GOOGL"
     }
     
-    empresa_seleccionada = st.selectbox("Selecciona una empresa específica:", list(diccionario_empresas.keys()))
+    empresa_seleccionada = st.selectbox("Selecciona la acción que deseas analizar de cerca:", list(diccionario_empresas.keys()))
     codigo_accion = diccionario_empresas[empresa_seleccionada]
     
-    if st.button("⚡ Analizar Oportunidad Individual", key="btn_auditar_humano"):
-        with st.spinner(f"Analizando técnico y riesgo de {empresa_seleccionada}..."):
+    if st.button("⚡ Analizar Oportunidad e Inteligencia de Sector", key="btn_auditar_humano"):
+        # Detectar sector de la empresa seleccionada usando nuestro pool_maestro
+        sector_objetivo = pool_maestro_acciones.get(codigo_accion, "Tecnología")
+        
+        st.markdown(f"### 🎯 Análisis de Competitividad en el Sector: **{sector_objetivo}**")
+        st.write("Escaneando el pool maestro de acciones de corto plazo para aislar los 5 mejores rendimientos tácticos según volumen e impulso:")
+        
+        # --- PROCESO EXCLUSIVO TOP 5 CORTO PLAZO DEL SECTOR ---
+        conglomerado_sectorial = []
+        barra_sectorial = st.progress(0)
+        
+        # Filtramos acciones que pertenezcan al mismo sector
+        acciones_en_sector = [ticker for ticker, sec in pool_maestro_acciones.items() if sec == sector_objetivo]
+        # Si hay pocas en ese sector específico, ampliamos el pool dinámicamente para garantizar un Top completo
+        if len(acciones_en_sector) < 5:
+            acciones_en_sector = list(pool_maestro_acciones.keys())
+            
+        total_sec_act = len(acciones_en_sector)
+        
+        for idx_s, ticker_s in enumerate(acciones_en_sector):
+            try:
+                obj_s = yf.Ticker(ticker_s)
+                hist_s = obj_s.history(period="20d")
+                inf_s = obj_s.info
+                p_cierre_s = hist_s['Close'].iloc[-1]
+                
+                # Cálculos de Corto Plazo: Tendencia e Inyección de Volumen de las Manos Fuertes
+                vol_hoy_s = inf_s.get('volume', 1) or 1
+                vol_prom_s = inf_s.get('averageVolume', 1) or 1
+                fuerza_dinero_s = vol_hoy_s / vol_prom_s
+                
+                delta_s = hist_s['Close'].diff()
+                gain_s = (delta_s.where(delta_s > 0, 0)).rolling(window=14).mean()
+                loss_s = (-delta_s.where(delta_s < 0, 0)).rolling(window=14).mean()
+                rs_s = gain_s / (loss_s + 1e-10)
+                rsi_s = 100 - (100 / (1 + rs_s.iloc[-1]))
+                
+                # Formula interna de Scoring Corto Plazo: Prioriza Inyección de Volumen Institucional + Impulso Sano (RSI)
+                puntuacion_corto_plazo = (fuerza_dinero_s * 60) + (100 - abs(60 - rsi_s))
+                
+                conglomerado_sectorial.append({
+                    "Código": ticker_s,
+                    "Empresa": inf_s.get('shortName', ticker_s),
+                    "Precio": p_cierre_s,
+                    "Inyección Capital": fuerza_dinero_s,
+                    "Interés (RSI)": rsi_s,
+                    "Score Táctico": puntuacion_corto_plazo
+                })
+            except:
+                pass
+            barra_sectorial.progress((idx_s + 1) / total_sec_act)
+            
+        if conglomerado_sectorial:
+            df_sectorial = pd.DataFrame(conglomerado_sectorial).sort_values(by="Score Táctico", ascending=False).head(5)
+            
+            # Mostrar tabla limpia del Top 5 Recomendado Corto Plazo
+            df_sec_vista = df_sectorial.copy()
+            df_sec_vista["Precio"] = df_sec_vista["Precio"].map(lambda x: f"${x:.2f} USD")
+            df_sec_vista["Inyección Capital"] = df_sec_vista["Inyección Capital"].map(lambda x: f"{x:.2f}x habitual")
+            df_sec_vista["Interés (RSI)"] = df_sec_vista["Interés (RSI)"].map(lambda x: f"{x:.1f} pts")
+            df_sec_vista.drop(columns=["Score Táctico"], inplace=True)
+            
+            st.dataframe(df_sec_vista, use_container_width=True, hide_index=True)
+        else:
+            st.error("No se pudo estructurar el ranking sectorial en este momento.")
+            
+        st.markdown("---")
+        
+        # --- PROCESAMIENTO ORIGINAL DE LA ACCIÓN PRINCIPAL SELECCIONADA ---
+        with st.spinner(f"Calculando márgenes de seguridad y órdenes de riesgo para {empresa_seleccionada}..."):
             try:
                 asset = yf.Ticker(codigo_accion)
                 hist = asset.history(period="60d")
                 inf = asset.info
                 precio_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
                 
-                if len(hist) < 20 or precio_actual == 0:
-                    st.error("Error al leer datos.")
-                else:
-                    hist['EMA_9'] = hist['Close'].ewm(span=9, adjust=False).mean()
-                    ema_actual = hist['EMA_9'].iloc[-1]
-                    delta = hist['Close'].diff()
-                    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-                    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-                    rs = gain / (loss + 1e-10)
-                    rsi_actual = 100 - (100 / (1 + rs.iloc[-1]))
-                    
-                    high_low = hist['High'] - hist['Low']
-                    high_close = np.abs(hist['High'] - hist['Close'].shift())
-                    low_close = np.abs(hist['Low'] - hist['Close'].shift())
-                    ranges = pd.concat([high_low, high_close, low_close], axis=1)
-                    true_range = ranges.max(axis=1)
-                    atr_actual = true_range.rolling(14).mean().iloc[-1]
-                    
-                    vol_hoy = inf.get('volume', 1) or 1
-                    vol_prom = inf.get('averageVolume', 1) or 1
-                    aceleracion_vol = vol_hoy / vol_prom
-                    
-                    condicion_direccion = precio_actual > ema_actual
-                    condicion_fuerza = 45 <= rsi_actual <= 70
-                    condicion_grandes_compradores = aceleracion_vol >= 1.2
-                    
-                    st.markdown(f"## 🏢 {inf.get('longName', empresa_seleccionada)} — `${precio_actual:.2f} USD`")
-                    st.markdown("---")
-                    
-                    st.markdown("### 🚦 Semáforo de Seguridad Instantáneo")
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        if condicion_direccion: st.success("🟢 **Dirección:** Subiendo de forma constante.")
-                        else: st.error("🔴 **Dirección:** Cayendo, peligroso comprar.")
-                    with c2:
-                        if condicion_fuerza: st.success(f"🟢 **Fuerza:** Interés del público saludable ({rsi_actual:.1f}).")
-                        elif rsi_actual > 70: st.warning("⚠️ **Fuerza:** Demasiado inflada hoy.")
-                        else: st.error("🔴 **Fuerza:** Sin fuerza ni interés.")
-                    with c3:
-                        if condicion_grandes_compradores: st.success(f"🟢 **Inversores Grandes:** Dinero fuerte entrando ({aceleracion_vol:.2f}x).")
-                        else: st.error("🔴 **Inversores Grandes:** No hay movimientos importantes hoy.")
+                hist['EMA_9'] = hist['Close'].ewm(span=9, adjust=False).mean()
+                ema_actual = hist['EMA_9'].iloc[-1]
+                delta = hist['Close'].diff()
+                gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                rs = gain / (loss + 1e-10)
+                rsi_actual = 100 - (100 / (1 + rs.iloc[-1]))
+                
+                high_low = hist['High'] - hist['Low']
+                high_close = np.abs(hist['High'] - hist['Close'].shift())
+                low_close = np.abs(hist['Low'] - hist['Close'].shift())
+                ranges = pd.concat([high_low, high_close, low_close], axis=1)
+                true_range = ranges.max(axis=1)
+                atr_actual = true_range.rolling(14).mean().iloc[-1]
+                
+                vol_hoy = inf.get('volume', 1) or 1
+                vol_prom = inf.get('averageVolume', 1) or 1
+                aceleracion_vol = vol_hoy / vol_prom
+                
+                condicion_direccion = precio_actual > ema_actual
+                condicion_fuerza = 45 <= rsi_actual <= 70
+                condicion_grandes_compradores = aceleracion_vol >= 1.2
+                
+                st.markdown(f"## 🏢 Auditoría de Compra: {inf.get('longName', empresa_seleccionada)} — `${precio_actual:.2f} USD`")
+                st.markdown("---")
+                
+                st.markdown("### 🚦 Semáforo de Seguridad Instantáneo")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if condicion_direccion: st.success("🟢 **Dirección:** Subiendo de forma constante.")
+                    else: st.error("🔴 **Dirección:** Cayendo, peligroso comprar.")
+                with c2:
+                    if condicion_fuerza: st.success(f"🟢 **Fuerza:** Interés del público saludable ({rsi_actual:.1f}).")
+                    elif rsi_actual > 70: st.warning("⚠️ **Fuerza:** Demasiado inflada hoy.")
+                    else: st.error("🔴 **Fuerza:** Sin fuerza ni interés.")
+                with c3:
+                    if condicion_grandes_compradores: st.success(f"🟢 **Inversores Grandes:** Dinero fuerte entrando ({aceleracion_vol:.2f}x).")
+                    else: st.error("🔴 **Inversores Grandes:** No hay movimientos importantes hoy.")
 
-                    st.markdown("---")
-                    st.markdown("### 📋 Tu Plan de Gestión de Riesgo (Evita Errores)")
-                    
-                    precio_salida_perdida = precio_actual - (1.5 * atr_actual)
-                    perdida_porcentaje = ((precio_actual - precio_salida_perdida) / precio_actual) * 100
-                    precio_salida_ganancia = precio_actual + (3.0 * atr_actual)
-                    ganancia_porcentaje = ((precio_salida_ganancia - precio_actual) / precio_actual) * 100
-                    dinero_maximo_a_perder = capital_total * (riesgo_maximo / 100)
-                    riesgo_por_accion = precio_actual - precio_salida_perdida
-                    
-                    cantidad_acciones = int(dinero_maximo_a_perder / riesgo_por_accion) if riesgo_por_accion > 0 else 0
-                    dinero_total_compra = cantidad_acciones * precio_actual
-                    
-                    cp1, cp2, cp3 = st.columns(3)
-                    with cp1: st.metric("🛑 Si baja de aquí, VENDE:", f"${precio_salida_perdida:.2f} USD", f"-{perdida_porcentaje:.1f}%")
-                    with cp2: st.metric("🎯 Si sube aquí, COBRA GANANCIA:", f"${precio_salida_ganancia:.2f} USD", f"+{ganancia_porcentaje:.1f}%")
-                    with cp3: st.metric("📦 Compra máxima permitida:", f"{cantidad_acciones} acciones", f"Usarás: ${dinero_total_compra:,.2f} USD")
-                    
-                    st.markdown("---")
-                    puntos = sum([condicion_direccion, condicion_fuerza, condicion_grandes_compradores])
-                    if puntos == 3: st.success("🚀 **¡SEÑAL DE COMPRA CONFIRMADA!** Todo está en verde. Sigue el plan de riesgo de arriba.")
-                    elif puntos == 2: st.warning("⚠️ **MEJOR ESPERA:** Riesgo moderado, falta alguna luz verde.")
-                    else: st.error("❌ **NO COMPRAR:** Alta probabilidad de perder dinero.")
+                st.markdown("---")
+                st.markdown("### 📋 Tu Plan de Gestión de Riesgo (Evita Errores)")
+                
+                precio_salida_perdida = precio_actual - (1.5 * atr_actual)
+                perdida_porcentaje = ((precio_actual - precio_salida_perdida) / precio_actual) * 100
+                precio_salida_ganancia = precio_actual + (3.0 * atr_actual)
+                ganancia_porcentaje = ((precio_salida_ganancia - precio_actual) / precio_actual) * 100
+                dinero_maximo_a_perder = capital_total * (riesgo_maximo / 100)
+                riesgo_por_accion = precio_actual - precio_salida_perdida
+                
+                cantidad_acciones = int(dinero_maximo_a_perder / riesgo_por_accion) if riesgo_por_accion > 0 else 0
+                dinero_total_compra = cantidad_acciones * precio_actual
+                
+                cp1, cp2, cp3 = st.columns(3)
+                with cp1: st.metric("🛑 Si baja de aquí, VENDE:", f"${precio_salida_perdida:.2f} USD", f"-{perdida_porcentaje:.1f}%")
+                with cp2: st.metric("🎯 Si sube aquí, COBRA GANANCIA:", f"${precio_salida_ganancia:.2f} USD", f"+{ganancia_porcentaje:.1f}%")
+                with cp3: st.metric("📦 Compra máxima permitida:", f"{cantidad_acciones} acciones", f"Usarás: ${dinero_total_compra:,.2f} USD")
+                
+                st.markdown("---")
+                puntos = sum([condicion_direccion, condicion_fuerza, condicion_grandes_compradores])
+                if puntos == 3: st.success("🚀 **¡SEÑAL DE COMPRA CONFIRMADA!** Todo está en verde. Sigue el plan de riesgo de arriba.")
+                elif puntos == 2: st.warning("⚠️ **MEJOR ESPERA:** Riesgo moderado, falta alguna luz verde.")
+                else: st.error("❌ **NO COMPRAR:** Alta probabilidad de perder dinero.")
             except:
-                st.error("Error al procesar.")
+                st.error("Error al procesar los cálculos de riesgo.")
