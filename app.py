@@ -125,7 +125,7 @@ with tab1:
                 st.dataframe(pd.DataFrame(resultados), use_container_width=True)
 
 # =====================================================================
-# PESTAÑA 2: RADAR MACRO + ESCANEO PERSISTENTE AMPLIO
+# PESTAÑA 2: RADAR MACRO + ESCANEO PERSISTENTE CON ÍNDICES GLOBALES
 # =====================================================================
 with tab2:
     st.subheader("🛰️ Sistema de Rastreo Global y Filtro Fundamental en Tiempo Real")
@@ -144,22 +144,50 @@ with tab2:
     margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 5, 40, 20, key="slider_macro_p2")
 
     if st.button("🛰️ Lanzar Algoritmo de Búsqueda Global", key="btn_auto"):
-        # 1. Escaneo de Índices de Referencia (Añadido Dow Jones)
-        indices_dict = {"S&P 500": "^GSPC", "NASDAQ 100": "^NDX", "Russell 2000": "^RUT", "Dow Jones": "^DJI"}
+        # 1. ESCANEO MASIVO DE TODOS LOS ÍNDICES DEL MUNDO
+        indices_mundo_dict = {
+            "^GSPC": "S&P 500 (EE.UU.)",
+            "^DJI": "Dow Jones (EE.UU.)",
+            "^IXIC": "NASDAQ Composite (EE.UU.)",
+            "^RUT": "Russell 2000 (EE.UU.)",
+            "^GSPTSE": "S&P/TSX (Canadá)",
+            "^MXX": "IPC (México)",
+            "^STOXX50E": "Euro Stoxx 50 (Europa)",
+            "^FTSE": "FTSE 100 (Reino Unido)",
+            "^GDAXI": "DAX (Alemania)",
+            "^FCHI": "CAC 40 (Francia)",
+            "^IBEX": "IBEX 35 (España)",
+            "^N225": "Nikkei 225 (Japón)",
+            "000001.SS": "Shanghai Comp. (China)",
+            "^HSI": "Hang Seng (Hong Kong)",
+            "^BSESN": "SENSEX (India)",
+            "^AXJO": "S&P/ASX 200 (Australia)",
+            "^BVSP": "IBOVESPA (Brasil)",
+            "^MERV": "Merval (Argentina)",
+            "COLCAP.CC": "MSCI COLCAP (Colombia)"
+        }
+        
         analisis_indices = []
-        for nombre_ind, ticker_ind in indices_dict.items():
-            try:
-                ind = yf.Ticker(ticker_ind)
-                hist = ind.history(period="2d")
-                if len(hist) >= 2:
-                    precio_actual = hist['Close'].iloc[-1]
-                    precio_previo = hist['Close'].iloc[-2]
-                    cambio_diario = ((precio_actual - precio_previo) / precio_previo) * 100
-                    analisis_indices.append({"Índice": nombre_ind, "Cierre": round(precio_actual, 2), "Cambio": f"{cambio_diario:+.2f}%"})
-            except: pass
+        with st.spinner("Escaneando todos los índices del mundo..."):
+            for ticker_ind, nombre_ind in indices_mundo_dict.items():
+                try:
+                    ind = yf.Ticker(ticker_ind)
+                    hist = ind.history(period="2d")
+                    if len(hist) >= 2:
+                        precio_actual = hist['Close'].iloc[-1]
+                        precio_previo = hist['Close'].iloc[-2]
+                        cambio_diario = ((precio_actual - precio_previo) / precio_previo) * 100
+                        analisis_indices.append({
+                            "Índice / Mercado del Mundo": nombre_ind, 
+                            "Ticker": ticker_ind,
+                            "Último Cierre": round(precio_actual, 2), 
+                            "Variación Diaria": f"{cambio_diario:+.2f}%"
+                        })
+                except: 
+                    pass
         st.session_state.indices_radar = analisis_indices
 
-        # 2. Pools Ampliados de Tickers
+        # 2. POOLS AMPLIADOS DE TICKERS PARA ACCIONES
         dict_sp500 = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "BRK-B", "V", "MA", "JPM", "BAC", "PG", "KO", "NKE", "TGT", "WMT", "JNJ", "PFE", "UNH", "XOM", "CVX", "HD", "COST", "PEP", "PM"]
         dict_nasdaq = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "AMD", "QCOM", "INTC", "TSM", "ASML", "NFLX", "ADBE", "PANW", "SNPS", "CDNS", "MAR", "ORCL", "TXN"]
         dict_dowjones = ["AAPL", "MSFT", "AMZN", "V", "JPM", "AXP", "PG", "KO", "WMT", "HD", "CAT", "DIS", "CVX", "BA", "HON", "IBM", "MMM", "GS", "UNH", "VZ"]
@@ -202,19 +230,17 @@ with tab2:
                         if cap_mercado < 6000000000 and crecimiento_ganancias <= 0.02: 
                             continue
                         
-                        # --- NUEVA LÓGICA DE PLAZO SUGERIDO (MOMENTUM Y VOLATILIDAD) ---
+                        # --- LÓGICA DE HORIZONTE TEMPORAL DINÁMICO ---
                         max_52 = info.get('fiftyTwoWeekHigh', precio)
                         min_52 = info.get('fiftyTwoWeekLow', precio)
                         
                         rango_total = max_52 - min_52 if (max_52 - min_52) > 0 else 1
                         posicion_precio = (precio - min_52) / rango_total
                         
-                        # Si tiene volumen alto, está cerca de máximos o es una Small Cap volátil -> Corto Plazo
                         if ratio_vol >= 1.05 or posicion_precio >= 0.75 or cap_mercado < 10000000000:
                             horizonte_sugerido = "⏳ Corto Plazo"
                         else:
                             horizonte_sugerido = "📈 Largo Plazo"
-                        # --------------------------------------------------------------
 
                         oportunidades.append({
                             "Ticker": t, "Empresa": nombre, "Plazo Sugerido": horizonte_sugerido, 
@@ -232,17 +258,17 @@ with tab2:
         st.session_state.total_analizadas = len(pool_dinamico)
         st.session_state.descartadas = descartadas_por_filtro
 
-    # --- MOSTRAR RESULTADOS GUARDADOS EN LA SESIÓN ---
+    # --- MOSTRAR RESULTADOS REPETIDOS O GUARDADOS EN LA SESIÓN ---
     if st.session_state.indices_radar:
-        st.markdown("#### 🌍 Comportamiento de Índices de Referencia")
+        st.markdown("#### 🌍 Comportamiento de Índices Macroeconómicos del Mundo")
         st.dataframe(pd.DataFrame(st.session_state.indices_radar), use_container_width=True)
 
     if st.session_state.resultados_radar:
-        st.markdown(f"📊 **Análisis completo:** Se evaluaron `{st.session_state.total_analizadas}` acciones. `{st.session_state.descartadas}` no cumplieron tu margen de seguridad.")
+        st.markdown(f"📊 **Análisis completo:** Se evaluaron `{st.session_state.total_analizadas}` acciones de los índices integrados. `{st.session_state.descartadas}` no cumplieron tu margen de seguridad.")
         df_final = pd.DataFrame(st.session_state.resultados_radar)
         st.dataframe(df_final, use_container_width=True)
         
-        # Panel de guardado persistente
+        # Panel de guardado persistente para la memoria
         st.markdown("### 📥 Guardar en la Memoria del Agente")
         col_sel, col_btn = st.columns([3, 1])
         with col_sel:
