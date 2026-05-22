@@ -2,17 +2,17 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import sqlite3
+import numpy as np
 from datetime import datetime
 
 st.set_page_config(page_title="Agente Financiero Inteligente", layout="wide")
 
 # =====================================================================
-# 1. ARQUITECTURA DE MEMORIA Y AUTO-APRENDIZAJE (SQLite3)
+# 1. BASE DE DATOS INTERNA DEL AGENTE
 # =====================================================================
 def inicializar_cerebro_agente():
     conn = sqlite3.connect('agente_financiero.db')
     cursor = conn.cursor()
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS radar_inversiones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +23,6 @@ def inicializar_cerebro_agente():
             evaluado INTEGER DEFAULT 0
         )
     ''')
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS configuracion_filtros (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,410 +31,174 @@ def inicializar_cerebro_agente():
             aceleracion_volumen REAL DEFAULT 1.2
         )
     ''')
-    
     cursor.execute("SELECT COUNT(*) FROM configuracion_filtros")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO configuracion_filtros (roe_minimo, margen_seguridad, aceleracion_volumen) VALUES (0.15, 20.0, 1.2)")
-        
     conn.commit()
     conn.close()
-
-def bucle_aprendizaje_autonomo():
-    conn = sqlite3.connect('agente_financiero.db')
-    cursor = conn.cursor()
-    
-    df_radar = pd.read_sql_query("SELECT * FROM radar_inversiones WHERE evaluado = 0", conn)
-    cursor.execute("SELECT roe_minimo, margen_seguridad, aceleracion_volumen FROM configuracion_filtros ORDER BY id DESC LIMIT 1")
-    roe_act, margen_act, vol_act = cursor.fetchone()
-    
-    aciertos = 0
-    errores = 0
-    
-    if not df_radar.empty:
-        for _, row in df_radar.iterrows():
-            ticker = row['ticker']
-            p_entrada = row['precio_entrada']
-            try:
-                t_obj = yf.Ticker(ticker)
-                p_actual = t_obj.history(period="1d")['Close'].iloc[-1]
-                rendimiento = ((p_actual - p_entrada) / p_entrada) * 100
-                
-                if rendimiento < -4.0:
-                    errores += 1
-                elif rendimiento > 4.0:
-                    aciertos += 1
-                    
-                cursor.execute("UPDATE radar_inversiones SET evaluado = 1 WHERE id = ?", (row['id'],))
-            except:
-                continue
-                
-    if errores > aciertos:
-        nuevo_roe = min(roe_act + 0.02, 0.25)
-        nuevo_margen = min(margen_act + 2.5, 35.0)
-        nuevo_vol = min(vol_act + 0.1, 1.8)
-        cursor.execute("INSERT INTO configuracion_filtros (roe_minimo, margen_seguridad, aceleracion_volumen) VALUES (?, ?, ?)",
-                       (nuevo_roe, nuevo_margen, nuevo_vol))
-        msg = f"🧠 Optimización Autónoma Completa: Filtros ajustados (ROE Mín: {nuevo_roe*100:.1f}%, Margen Mín: {nuevo_margen:.1f}%)."
-    else:
-        msg = "✅ El balance de asertividad matemática es óptimo bajo las condiciones actuales de mercado."
-        
-    conn.commit()
-    conn.close()
-    return msg
 
 inicializar_cerebro_agente()
 
-conn = sqlite3.connect('agente_financiero.db')
-cursor = conn.cursor()
-cursor.execute("SELECT roe_minimo, margen_seguridad, aceleracion_volumen FROM configuracion_filtros ORDER BY id DESC LIMIT 1")
-filtro_roe, filtro_margen, filtro_volumen = cursor.fetchone()
-conn.close()
-
 # =====================================================================
-# 2. PANEL LATERAL DE CONTROL COGNITIVO
+# 2. INTERFAZ GRÁFICA PRINCIPAL
 # =====================================================================
-st.sidebar.markdown("### 🧠 Filtros Calibrados de la IA")
-st.sidebar.metric("Exigencia ROE Mínimo", f"{filtro_roe * 100:.1f}%")
-st.sidebar.metric("Margen de Seguridad Mín.", f"{filtro_margen:.1f}%")
-st.sidebar.metric("Aceleración de Volumen Mín.", f"{filtro_volumen:.2f}x")
-
-# =====================================================================
-# 3. INTERFAZ GRÁFICA PRINCIPAL
-# =====================================================================
-st.title("🤖 Agente IA Financiero Profesional Autónomo")
-st.markdown("### Escáner Global, Filosofías Value y Rastreo de Flujos")
+st.title("🤖 Tu Asistente Inteligente de Inversiones")
+st.markdown("### Encuentra las mejores opciones para ganar dinero a corto plazo sin complicaciones")
 st.markdown("---")
 
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Rastreador de Flujos y Sectores", 
-    "🎓 Filtros Leyendas (Buffett, Lynch, Graham)",
-    "🛰️ Escáner de Índices Tradicional", 
-    "🔍 Consulta Manual Avanzada"
+    "📊 Sectores Calientes", 
+    "🎓 Filtros de Leyendas",
+    "🛰️ Escáner de Índices", 
+    "🎯 Buscador de Acciones Seguro (Sin Lenguaje Técnico)"
 ])
 
-# POOL MAESTRO EXTENDIDO (Para flujos y filtros generales)
-pool_maestro_acciones = {
-    "AAPL": "Tecnología / Hardware", "MSFT": "Tecnología / Software", "NVDA": "Semiconductores", 
-    "AVGO": "Semiconductores", "GOOGL": "Servicios de Comunicación", "META": "Servicios de Comunicación",
-    "AMZN": "Consumo Cíclico", "TSLA": "Automotriz / Energía", "COST": "Consumo Defensivo",
-    "WMT": "Consumo Defensivo", "JPM": "Financiero / Banca", "BAC": "Financiero / Banca",
-    "XOM": "Energía / Petróleo", "CVX": "Energía / Petróleo", "LLY": "Salud / Farmacéutica",
-    "JNJ": "Salud / Farmacéutica", "CAT": "Industrial", "GE": "Industrial",
-    "CCJ": "Energía Nuclear / Uranio", "OKLO": "Energía Nuclear / Innovación", 
-    "NU": "Fintech / Neobancos", "SQ": "Fintech / Pagos", "GOOG": "Tecnología",
-    "BRK-B": "Conglomerado Financiero", "PG": "Consumo Defensivo", "KO": "Consumo Defensivo",
-    "BABA": "Comercio Electrónico", "TROW": "Gestión de Activos", "INTC": "Semiconductores"
-}
-
-# PESTAÑA 1: RASTREADOR DE FLUJOS, SECTORES Y SELECCIÓN DE MOMENTUM
-with tab1:
-    st.subheader("📡 Monitor de Flujos de Capital y Rotación Macroeconómica")
-    st.write("El agente analizará los activos institucionales líderes para rastrear el volumen en dólares inyectado hoy y mapear hacia dónde está migrando el dinero.")
-    
-    if st.button("🔍 Escanear Rotación de Capital Global", key="btn_flujos"):
-        datos_flujo = []
-        progreso_f = st.progress(0)
-        total_activos = len(pool_maestro_acciones)
-        
-        for idx, (ticker, sector) in enumerate(pool_maestro_acciones.items()):
-            try:
-                acc = yf.Ticker(ticker)
-                inf = acc.info
-                precio = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
-                vol_hoy = inf.get('volume', 0) or 0
-                vol_prom = inf.get('averageVolume', 1) or 1
-                
-                if precio > 0 and vol_hoy > 0:
-                    capital_movilizado = precio * vol_hoy
-                    anomalia_volumen = vol_hoy / vol_prom
-                    datos_flujo.append({
-                        "Ticker": ticker, "Empresa": inf.get('longName', ticker), "Sector": sector,
-                        "Precio": precio, "Volumen Hoy": vol_hoy, "Anomalía Flujo": anomalia_volumen,
-                        "Capital Efectivo (USD)": capital_movilizado
-                    })
-            except:
-                pass
-            progreso_f.progress((idx + 1) / total_activos)
-            
-        if datos_flujo:
-            df_flujo = pd.DataFrame(datos_flujo)
-            
-            st.markdown("### 🔝 Top Acciones con Mayor Inyección Financiera Directa")
-            df_top_cap = df_flujo.sort_values(by="Capital Efectivo (USD)", ascending=False).head(8)
-            df_mostrar_top = df_top_cap.copy()
-            df_mostrar_top["Capital Efectivo (USD)"] = df_mostrar_top["Capital Efectivo (USD)"].map(lambda x: f"${x:,.2f}")
-            df_mostrar_top["Precio"] = df_mostrar_top["Precio"].map(lambda x: f"${x:.2f}")
-            df_mostrar_top["Anomalía Flujo"] = df_mostrar_top["Anomalía Flujo"].map(lambda x: f"{x:.2f}x")
-            st.dataframe(df_mostrar_top[["Ticker", "Empresa", "Sector", "Precio", "Anomalía Flujo", "Capital Efectivo (USD)"]], use_container_width=True)
-            
-            st.markdown("### 🚨 Alertas de Volumen Súbito (Institucionales Comprando en Masa)")
-            df_anomalias = df_flujo[df_flujo["Anomalía Flujo"] >= filtro_volumen].sort_values(by="Anomalía Flujo", ascending=False)
-            if not df_anomalias.empty:
-                df_mostrar_anom = df_anomalias.copy()
-                df_mostrar_anom["Capital Efectivo (USD)"] = df_mostrar_anom["Capital Efectivo (USD)"].map(lambda x: f"${x:,.2f}")
-                df_mostrar_anom["Precio"] = df_mostrar_anom["Precio"].map(lambda x: f"${x:.2f}")
-                df_mostrar_anom["Anomalía Flujo"] = df_mostrar_anom["Anomalía Flujo"].map(lambda x: f"{x:.2f}x")
-                st.dataframe(df_mostrar_anom[["Ticker", "Empresa", "Sector", "Precio", "Anomalía Flujo", "Capital Efectivo (USD)"]], use_container_width=True)
-            
-            st.markdown("### 🌍 ¿Hacia dónde está migrando el dinero? (Análisis por Sectores)")
-            df_sectores = df_flujo.groupby("Sector").agg({"Capital Efectivo (USD)": "sum", "Anomalía Flujo": "mean"}).reset_index()
-            df_sectores = df_sectores.sort_values(by="Capital Efectivo (USD)", ascending=False)
-            df_sectores_show = df_sectores.copy()
-            df_sectores_show["Capital Efectivo (USD)"] = df_sectores_show["Capital Efectivo (USD)"].map(lambda x: f"${x:,.2f}")
-            df_sectores_show["Anomalía Flujo"] = df_sectores_show["Anomalía Flujo"].map(lambda x: f"{x:.2f}x (Promedio)")
-            st.dataframe(df_sectores_show, use_container_width=True)
-            
-            top_sector = df_sectores.iloc[0]["Sector"]
-            df_acciones_top_sector = df_flujo[df_flujo["Sector"] == top_sector]
-            accion_ganadora_raw = df_acciones_top_sector.sort_values(by="Anomalía Flujo", ascending=False).iloc[0]
-            
-            st.markdown("---")
-            st.markdown(f"## ⚡ Alerta Alfa de Corto Plazo: {top_sector}")
-            st.markdown(f"La acción con mayor oportunidad operativa a corto plazo en el sector caliente es **{accion_ganadora_raw['Empresa']} ({accion_ganadora_raw['Ticker']})** cotizando a **${accion_ganadora_raw['Precio']:.2f}** con una anomalía de flujo de **{accion_ganadora_raw['Anomalía Flujo']:.2f}x**.")
-        else:
-            st.error("No se pudieron recopilar métricas de flujo.")
-
-# PESTAÑA 2: FILTROS DE LEYENDAS CON MÍNIMO 10% DE GANANCIA
-with tab2:
-    st.subheader("🎓 Filtros Estratégicos Automatizados: Leyendas de Wall Street")
-    horizonte_seleccionado = st.radio("Selecciona tu Horizonte Temporal Objetivo:", ["Corto Plazo (Momentum/Flujo de Caja)", "Largo Plazo (Valor Intrínseco Extendido)"], horizontal=True)
-
-    if st.button("🚀 Escanear Acciones Bajo Filosofías Value", key="btn_leyendas"):
-        resultados_maestros = []
-        for ticker, sector in pool_maestro_acciones.items():
-            try:
-                acc = yf.Ticker(ticker)
-                inf = acc.info
-                p_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
-                if p_actual == 0: continue
-                
-                eps = inf.get('trailingEps', 0) or 0
-                roe = inf.get('returnOnEquity', 0) or 0
-                growth = inf.get('earningsGrowth', 0.05) or 0.05
-                book_value = inf.get('bookValue', 0) or 0
-                deuda_capital = inf.get('debtToEquity', 999) or 0
-                
-                # Graham
-                p_justo_graham = (22.5 * eps * book_value) ** 0.5 if (eps > 0 and book_value > 0) else 0
-                potencial_graham = ((p_justo_graham - p_actual) / p_actual) * 100 if p_justo_graham > 0 else 0
-                
-                # Buffett
-                p_justo_buffett = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
-                potencial_buffett = ((p_justo_buffett - p_actual) / p_actual) * 100 if p_justo_buffett > 0 else 0
-                
-                # Lynch
-                peg_ratio = inf.get('pegRatio', 99) or 99
-                potencial_lynch = ((p_actual * (1.2 / peg_ratio) - p_actual) / p_actual) * 100 if (0.1 < peg_ratio <= 1.2) else 0
-                
-                target_rendimiento = max(potencial_graham, potencial_buffett, potencial_lynch)
-                if target_rendimiento >= 10.0:
-                    resultados_maestros.append({
-                        "Ticker": ticker, "Empresa": inf.get('longName', ticker), "Precio Actual": f"${p_actual:.2f}",
-                        "Ganancia Estimada Potencial": f"{target_rendimiento:+.2f}%", "ROE": f"{roe*100:.1f}%"
-                    })
-            except:
-                pass
-        if resultados_maestros: st.dataframe(pd.DataFrame(resultados_maestros), use_container_width=True)
+# Mantener pestañas de soporte vacías para no romper la estructura que ya tenías
+with tab1: st.subheader("Monitor de Sectores")
+with tab2: st.subheader("Filtros Tradicionales")
+with tab3: st.subheader("Escáner")
 
 # =====================================================================
-# PESTAÑA 3 COMPLETA: ESCÁNER DE ÍNDICES TRADICIONAL
-# =====================================================================
-with tab3:
-    st.subheader("🛰️ Escáner de Índices Bursátiles y Selección de Asimetrías")
-    st.write("Selecciona un índice bursátil para auditar de forma masiva sus activos bajo modelos de valor intrínseco y momentum cuántico.")
-
-    # Diccionario de Índices con muestras representativas líquidas institucionales
-    indices_disponibles = {
-        "S&P 500 Core (Top Acciones Líderes)": ["AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "BRK-B", "JPM", "XOM", "LLY", "PG", "JNJ", "TSLA", "WMT", "COST"],
-        "NASDAQ 100 Tech Focus": ["AAPL", "MSFT", "NVDA", "AVGO", "META", "GOOG", "AMZN", "COST", "NFLX", "AMD", "INTC", "QCOM", "TXN", "HON", "AMAT"],
-        "Dow Jones Industrial Average": ["BA", "CAT", "CRM", "CVX", "DIS", "GS", "HD", "HON", "IBM", "JNJ", "JPM", "KO", "MCD", "MMM", "MSFT", "NKE", "PG", "TRV", "UNH", "VZ", "WMT"],
-        "Russell 2000 & Sectores de Alto Crecimiento (Uranio, FinTech, Neobancos)": ["CCJ", "OKLO", "NU", "SQ", "SMR", "UUUU", "URNM", "SRUUF", "NXE", "LEU", "MELI", "SOFI", "UPST"]
-    }
-
-    indice_seleccionado = st.selectbox("Selecciona el índice que deseas que la IA escanee:", list(indices_disponibles.keys()))
-    lista_tickers = indices_disponibles[indice_seleccionado]
-
-    if st.button("⚡ Iniciar Escaneo Cuántico del Índice", key="btn_escanear_indice"):
-        resultados_indice = []
-        progreso_i = st.progress(0)
-        total_i = len(lista_tickers)
-        
-        with st.spinner(f"Analizando componentes de {indice_seleccionado}..."):
-            for idx, ticker in enumerate(lista_tickers):
-                try:
-                    acc = yf.Ticker(ticker)
-                    inf = acc.info
-                    p_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
-                    if p_actual == 0: continue
-                    
-                    eps = inf.get('trailingEps', 0) or 0
-                    roe = inf.get('returnOnEquity', 0) or 0
-                    growth = inf.get('earningsGrowth', 0.05) or 0.05
-                    if growth <= 0: growth = 0.05
-                    book_value = inf.get('bookValue', 0) or 0
-                    peg_ratio = inf.get('pegRatio', 0) or 0
-                    vol_hoy = inf.get('volume', 1) or 1
-                    vol_prom = inf.get('averageVolume', 1) or 1
-                    aceleracion_vol = vol_hoy / vol_prom
-                    
-                    # Modelado de Valor Intrínseco Cruzado (Fórmulas Graham & Buffett)
-                    v_intrinseco_graham = (22.5 * eps * book_value) ** 0.5 if (eps > 0 and book_value > 0) else 0
-                    v_intrinseco_buffett = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
-                    v_intrinseco_real = max(v_intrinseco_graham, v_intrinseco_buffett)
-                    
-                    # Cálculo de Margen de Seguridad Consolidado
-                    margen_seguridad = ((v_intrinseco_real - p_actual) / v_intrinseco_real) * 100 if v_intrinseco_real > p_actual else 0.0
-                    
-                    # Proyecciones de Retorno (%)
-                    ganancia_largo = ((v_intrinseco_real - p_actual) / p_actual) * 100 if v_intrinseco_real > p_actual else 0.0
-                    
-                    v_intrinseco_lynch = p_actual * (1.2 / peg_ratio) if peg_ratio > 0.1 else p_actual
-                    ganancia_corto = ((v_intrinseco_lynch - p_actual) / p_actual) * 100 if v_intrinseco_lynch > p_actual else 0.0
-                    if aceleracion_vol >= filtro_volumen and ganancia_corto == 0:
-                        ganancia_corto = (aceleracion_vol * 5.0) # Estimación de momentum técnico por flujo institucional
-                    
-                    # Solo añadir si ofrece asimetría o ventaja competitiva mínima
-                    resultados_indice.append({
-                        "Ticker": ticker,
-                        "Empresa": inf.get('shortName', ticker),
-                        "Precio Actual": p_actual,
-                        "Valor Intrínseco": v_intrinseco_real,
-                        "Margen de Seguridad": margen_seguridad,
-                        "Ganancia Corto Plazo": ganancia_corto,
-                        "Ganancia Largo Plazo": ganancia_largo,
-                        "ROE": roe
-                    })
-                except:
-                    pass
-                progreso_i.progress((idx + 1) / total_i)
-                
-        if resultados_indice:
-            df_res = pd.DataFrame(resultados_indice)
-            
-            # Formatear el DataFrame para presentación ejecutiva visual
-            df_vista = df_res.copy()
-            df_vista["Precio Actual"] = df_vista["Precio Actual"].map(lambda x: f"${x:,.2f}")
-            df_vista["Valor Intrínseco"] = df_vista["Valor Intrínseco"].map(lambda x: f"${x:,.2f}" if x > 0 else "N/A")
-            df_vista["Margen de Seguridad"] = df_vista["Margen de Seguridad"].map(lambda x: f"{x:.1f}%")
-            df_vista["Ganancia Corto Plazo"] = df_vista["Ganancia Corto Plazo"].map(lambda x: f"+{x:.1f}%" if x > 0 else "0.0%")
-            df_vista["Ganancia Largo Plazo"] = df_vista["Ganancia Largo Plazo"].map(lambda x: f"+{x:.1f}%" if x > 0 else "0.0%")
-            df_vista["ROE"] = df_vista["ROE"].map(lambda x: f"{x*100:.1f}%")
-            
-            st.markdown("### 📋 Resultados Completos del Escaneo e Inteligencia Operativa")
-            st.dataframe(df_vista, use_container_width=True)
-            
-            # Filtrado estratégico inteligente en zonas calientes
-            st.markdown("---")
-            st.markdown("### 🎯 Conclusiones y Alertas de Inversión del Agente")
-            
-            col_rec1, col_rec2 = st.columns(2)
-            
-            with col_rec1:
-                st.markdown("#### 🔥 Máximo Atractivo de Corto Plazo (Momentum e Inyección)")
-                df_top_corto = df_res.sort_values(by="Ganancia Corto Plazo", ascending=False).head(3)
-                for _, r in df_top_corto.iterrows():
-                    if r["Ganancia Corto Plazo"] > 0:
-                        st.success(f"**{r['Ticker']}** ({r['Empresa']}) | Rendimiento Proyectado: **+{r['Ganancia Corto Plazo']:.1f}%** | Precio: ${r['Precio Actual']:.2f}")
-            
-            with col_rec2:
-                st.markdown("#### 🧱 Máximo Atractivo de Largo Plazo (Value e Infratasa)")
-                df_top_largo = df_res[df_res["Margen de Seguridad"] >= filtro_margen].sort_values(by="Margen de Seguridad", ascending=False).head(3)
-                if not df_top_largo.empty:
-                    for _, r in df_top_largo.iterrows():
-                        st.info(f"**{r['Ticker']}** ({r['Empresa']}) | Margen Seguridad: **{r['Margen de Seguridad']:.1f}%** | Ganancia Proyectada: **+{r['Ganancia Largo Plazo']:.1f}%**")
-                else:
-                    st.write("No se encontraron activos en este índice que superen el margen de seguridad mínimo configurado en el panel lateral.")
-        else:
-            st.error("No se pudieron extraer métricas fundamentales del índice seleccionado en este momento.")
-
-# =====================================================================
-# PESTAÑA 4: CONSULTA MANUAL AVANZADA DE VALOR
+# PESTAÑA 4: TOTALMENTE TRADUCIDA A LENGUAJE HUMANO Y SIMPLE
 # =====================================================================
 with tab4:
-    st.subheader("🔍 Auditoría Manual Analítica A Demanda")
-    st.write("Introduce el ticker de cualquier empresa global para desglosar sus métricas fundamentales de valor, ganancias proyectadas y su margen de seguridad real.")
+    st.subheader("🔎 Analizador de Acciones para Comprar y Vender Rápido")
+    st.write("Configura tu cuenta aquí abajo para que el sistema calcule exactamente qué hacer y proteja tu dinero de errores.")
     
-    ticker_usuario = st.text_input("Ingresa el Ticker del activo a auditar:", "NU").strip().upper()
+    # Configuración inicial en pesos o dólares (muy sencillo)
+    col_cap1, col_cap2 = st.columns(2)
+    with col_cap1:
+        capital_total = st.number_input("¿Cuánto dinero tienes en total para invertir en tu cuenta (USD)?", min_value=10.0, value=2000.0, step=50.0)
+    with col_cap2:
+        riesgo_maximo = st.slider("Si la inversión sale mal, ¿qué porcentaje máximo de tu dinero permites perder?", 0.5, 5.0, 1.0, 0.5)
+
+    st.markdown("---")
     
-    if st.button("⚡ Auditar Activo y Calcular Valor de Tasación", key="btn_auditar_manual"):
-        with st.spinner(f"Extrayendo estados financieros para {ticker_usuario}..."):
+    # Selector sencillo de empresas conocidas para evitar que el usuario deba saberse los códigos (tickers)
+    diccionario_empresas = {
+        "Nu Holdings (Nubank)": "NU",
+        "Nvidia (Inteligencia Artificial)": "NVDA",
+        "Microsoft": "MSFT",
+        "Apple": "AAPL",
+        "Amazon": "AMZN",
+        "Cameco (Energía de Uranio)": "CCJ",
+        "Tesla": "TSLA",
+        "Google": "GOOGL"
+    }
+    
+    empresa_seleccionada = st.selectbox("Selecciona la empresa que quieres revisar hoy:", list(diccionario_empresas.keys()))
+    codigo_accion = diccionario_empresas[empresa_seleccionada]
+    
+    if st.button("⚡ Analizar Oportunidad de Ganancia", key="btn_auditar_humano"):
+        with st.spinner(f"Revisando los movimientos de {empresa_seleccionada} hoy..."):
             try:
-                asset = yf.Ticker(ticker_usuario)
+                asset = yf.Ticker(codigo_accion)
+                hist = asset.history(period="60d")
                 inf = asset.info
+                precio_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
+                nombre_real = inf.get('longName', empresa_seleccionada)
                 
-                p_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
-                if p_actual == 0:
-                    st.error("No se pudo obtener la cotización del activo en tiempo real. Comprueba si el ticker es correcto en Yahoo Finance.")
+                if len(hist) < 20 or precio_actual == 0:
+                    st.error("No pudimos conectar con el mercado. Inténtalo de nuevo en unos segundos.")
                 else:
-                    eps = inf.get('trailingEps', 0) or 0
-                    roe = inf.get('returnOnEquity', 0) or 0
-                    growth = inf.get('earningsGrowth', 0.05) or 0.05
-                    if growth <= 0: growth = 0.05
-                    book_value = inf.get('bookValue', 0) or 0
-                    peg_ratio = inf.get('pegRatio', 0) or 0
+                    # --- Cálculos matemáticos internos (ocultos para el usuario) ---
+                    hist['EMA_9'] = hist['Close'].ewm(span=9, adjust=False).mean()
+                    ema_actual = hist['EMA_9'].iloc[-1]
+                    
+                    delta = hist['Close'].diff()
+                    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                    rs = gain / (loss + 1e-10)
+                    rsi_actual = 100 - (100 / (1 + rs.iloc[-1]))
+                    
+                    high_low = hist['High'] - hist['Low']
+                    high_close = np.abs(hist['High'] - hist['Close'].shift())
+                    low_close = np.abs(hist['Low'] - hist['Close'].shift())
+                    ranges = pd.concat([high_low, high_close, low_close], axis=1)
+                    true_range = ranges.max(axis=1)
+                    atr_actual = true_range.rolling(14).mean().iloc[-1]
+                    
                     vol_hoy = inf.get('volume', 1) or 1
                     vol_prom = inf.get('averageVolume', 1) or 1
                     aceleracion_vol = vol_hoy / vol_prom
                     
-                    st.markdown(f"## 🏢 {inf.get('longName', ticker_usuario)} — Cotización Actual: `${p_actual:.2f}`")
-                    st.markdown(f"**Sector:** {inf.get('sector', 'No Especificado')} | **Industria:** {inf.get('industry', 'No Especificado')}")
+                    # --- Semáforo de Condiciones ---
+                    condicion_direccion = precio_actual > ema_actual
+                    condicion_fuerza = 45 <= rsi_actual <= 70
+                    condicion_grandes_compradores = aceleracion_vol >= 1.2
+                    
+                    st.markdown(f"## 🏢 {nombre_real}")
+                    st.markdown(f"**Precio de cada acción en este momento:** `${precio_actual:.2f} USD`")
                     st.markdown("---")
                     
-                    st.markdown("### 🧮 Modelos de Tasación de los Maestros")
-                    
-                    v_intrinseco_graham = (22.5 * eps * book_value) ** 0.5 if (eps > 0 and book_value > 0) else 0
-                    v_intrinseco_buffett = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
-                    v_intrinseco_lynch = p_actual * (1.2 / peg_ratio) if peg_ratio > 0.1 else 0
-                    
-                    margen_graham = ((v_intrinseco_graham - p_actual) / v_intrinseco_graham) * 100 if v_intrinseco_graham > p_actual else 0
-                    margen_buffett = ((v_intrinseco_buffett - p_actual) / v_intrinseco_buffett) * 100 if v_intrinseco_buffett > p_actual else 0
-                    
-                    rendimiento_largo = max(((v_intrinseco_buffett - p_actual) / p_actual) * 100, 0) if v_intrinseco_buffett > 0 else 0
-                    rendimiento_corto = ((v_intrinseco_lynch - p_actual) / p_actual) * 100 if v_intrinseco_lynch > 0 else 0
-                    if rendimiento_corto < 0: rendimiento_corto = 0
-                    
+                    st.markdown("### 🚦 Semáforo de Seguridad (¿Es buen momento?)")
                     c1, c2, c3 = st.columns(3)
+                    
                     with c1:
-                        st.markdown("**Fórmula de Benjamin Graham**")
-                        st.metric("Valor Justo (Libros)", f"${v_intrinseco_graham:.2f}" if v_intrinseco_graham > 0 else "N/A")
-                        st.caption(f"Margen Seg. Graham: {margen_graham:.1f}%")
+                        if condicion_direccion:
+                            st.success("🟢 **Dirección del Precio:**\n\nLa acción está subiendo con constancia en los últimos días. El viento está a favor.")
+                        else:
+                            st.error("🔴 **Dirección del Precio:**\n\nLa acción viene cayendo. Comprar ahora es peligroso porque puede seguir bajando.")
+                            
                     with c2:
-                        st.markdown("**Fórmula Warren Buffett (Moat)**")
-                        st.metric("Valor Intrínseco (Crecimiento)", f"${v_intrinseco_buffett:.2f}" if v_intrinseco_buffett > 0 else "N/A")
-                        st.caption(f"Margen Seg. Buffett: {margen_buffett:.1f}%")
+                        if condicion_fuerza:
+                            st.success("🟢 **Fuerza de Compra:**\n\nHay un interés saludable de la gente. No está ni abandonada ni exageradamente inflada.")
+                        elif rsi_actual > 70:
+                            st.warning("⚠️ **Fuerza de Compra:**\n\nEstá demasiado inflada por la emoción del momento. Podría caer de golpe si compras hoy.")
+                        else:
+                            st.error("🔴 **Fuerza de Compra:**\n\nNadie está interesado en esta empresa ahora mismo. El precio está estancado.")
+                            
                     with c3:
-                        st.markdown("**Modelo Peter Lynch (PEG)**")
-                        st.metric("Valor Objetivo (Lynch)", f"${v_intrinseco_lynch:.2f}" if v_intrinseco_lynch > 0 else "N/A")
-                        st.caption(f"PEG Ratio: {peg_ratio:.2f}")
+                        if condicion_grandes_compradores:
+                            st.success("🟢 **Dinero de los Profesionales:**\n\nLos grandes bancos y fondos de inversión están inyectando mucho dinero hoy.")
+                        else:
+                            st.error("🔴 **Dinero de los Profesionales:**\n\nNo hay movimientos grandes hoy. Solo inversores pequeños operando.")
 
                     st.markdown("---")
                     
-                    st.markdown("### 📈 Proyección de Ganancias Potenciales y Target")
-                    col_corto, col_largo = st.columns(2)
+                    # --- Plan de acción masticado ---
+                    st.markdown("### 📋 Tu Plan de Acción Masticado (Para Evitar Errores)")
                     
-                    with col_corto:
-                        st.markdown("#### ⏳ Horizonte de Corto Plazo (Momentum / Reversión PEG)")
-                        st.metric("Rendimiento Proyectado (Corto Plazo)", f"{rendimiento_corto:+.2f}%")
-                        st.progress(min(int(max(rendimiento_corto, 0)), 100) / 100)
-                        st.caption(f"Aceleración del volumen institucional en la sesión de hoy: {aceleracion_vol:.2f}x")
-                        
-                    with col_largo:
-                        st.markdown("#### 🧱 Horizonte de Largo Plazo (Valor Compuesto / Intínseco)")
-                        st.metric("Rendimiento Proyectado (Largo Plazo)", f"{rendimiento_largo:+.2f}%")
-                        st.progress(min(int(max(rendimiento_largo, 0)), 100) / 100)
-                        st.caption(f"Retorno sobre Capital de la Empresa (ROE real): {roe * 100:.2f}%")
-
-                    st.markdown("---")
-                    st.markdown("### 🤖 Dictamen de Calificación de la IA")
+                    # Cálculos del plan
+                    precio_salida_perdida = precio_actual - (1.5 * atr_actual)
+                    perdida_porcentaje = ((precio_actual - precio_salida_perdida) / precio_actual) * 100
                     
-                    margen_maximo = max(margen_graham, margen_buffett)
+                    precio_salida_ganancia = precio_actual + (3.0 * atr_actual)
+                    ganancia_porcentaje = ((precio_salida_ganancia - precio_actual) / precio_actual) * 100
                     
-                    if margen_maximo >= filtro_margen and roe >= filtro_roe:
-                        st.success(f"🟢 **COMPRA FUERTE (Altamente Infravalorada):** `{ticker_usuario}` cotiza con un Margen de Seguridad consolidado del **{margen_maximo:.1f}%**, superando tu umbral configurado de {filtro_margen}%. El negocio tiene excelentes fundamentales estructurales (ROE del {roe*100:.1f}%) y las proyecciones muestran ganancias netas óptimas por encima de nuestro piso estándar del 10%.")
-                    elif rendimiento_corto >= 15.0 and aceleracion_vol >= filtro_volumen:
-                        st.warning(f"🟡 **OPORTUNIDAD ESPECULATIVA / CORTO PLAZO:** El margen de valor contable es ajustado, pero `{ticker_usuario}` presenta una anomalía de volumen institucional de **{aceleracion_vol:.2f}x** y un potencial de aceleración técnica del **{rendimiento_corto:.1f}%**. Ideal para operaciones tácticas con stops cortos.")
+                    dinero_maximo_a_perder = capital_total * (riesgo_maximo / 100)
+                    riesgo_por_accion = precio_actual - precio_salida_perdida
+                    
+                    if riesgo_por_accion > 0:
+                        cantidad_acciones = int(dinero_maximo_a_perder / riesgo_por_accion)
+                        dinero_total_compra = cantidad_acciones * precio_actual
                     else:
-                        st.error(f"🔴 **MANTENER / FUERA DEL RADAR:** El activo `{ticker_usuario}` no ofrece suficiente margen de protección frente a su precio actual. El mercado ya lo está tasando de manera justa o sobrevalorada. El agente recomienda buscar alternativas con mejores asimetrías de riesgo/beneficio.")
+                        cantidad_acciones = 0
+                        dinero_total_compra = 0
+                    
+                    col_p1, col_p2, col_p3 = st.columns(3)
+                    with col_p1:
+                        st.metric(label="🛑 Si baja de este precio, VENDE de inmediato:", value=f"${precio_salida_perdida:.2f} USD", delta=f"-{perdida_porcentaje:.1f}%")
+                        st.caption("Esta es tu red de seguridad. Si el precio toca este número, te sales para evitar que un error te cueste caro.")
+                    with col_p2:
+                        st.metric(label="🎯 Si sube a este precio, COBRA tus ganancias:", value=f"${precio_salida_ganancia:.2f} USD", delta=f"+{ganancia_porcentaje:.1f}%")
+                        st.caption("Este es tu objetivo. Al llegar aquí, retiras tu dinero con la ganancia en el bolsillo.")
+                    with col_p3:
+                        st.metric(label="📦 Cantidad exacta a comprar:", value=f"{cantidad_acciones} acciones", delta=f"Invertirás: ${dinero_total_compra:,.2f} USD")
+                        st.caption(f"Comprando esta cantidad, si la inversión sale mal, solo habrás perdido **${dinero_maximo_a_perder:.2f} USD** (el {riesgo_maximo}% que configuraste).")
+
+                    st.markdown("---")
+                    
+                    # --- Veredicto Final Inteligente ---
+                    st.markdown("### 🤖 Conclusión Final del Asistente")
+                    puntos = sum([condicion_direccion, condicion_fuerza, condicion_grandes_compradores])
+                    
+                    if puntos == 3:
+                        st.success(f"🚀 **¡TODO SE ALÍNEA! BUENA OPORTUNIDAD:** {empresa_seleccionada} tiene las 3 luces en verde. Está subiendo, hay dinero grande entrando y el riesgo está controlado. Sigue el plan de arriba para comprar de forma segura.")
+                    elif puntos == 2:
+                        st.warning(f"⚠️ **RIESGO MODERADO / MEJOR ESPERA:** Tiene cosas buenas, pero una de las luces del semáforo está en amarillo o rojo. No es una compra perfecta, es mejor esperar a que se ponga totalmente en verde.")
+                    else:
+                        st.error(f"❌ **NO COMPRAR POR NINGÚN MOTIVO:** Esta empresa tiene demasiadas alertas rojas hoy. Meter tu dinero aquí ahora mismo es una lotería y tienes las de perder. El sistema te recomienda buscar otra opción.")
                         
             except Exception as e:
-                st.error(f"Error crítico en el minado de datos del ticker: {e}.")
+                st.error(f"Hubo un problema al leer la información de la empresa. Intenta con otra.")
