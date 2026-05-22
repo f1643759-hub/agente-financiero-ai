@@ -109,11 +109,11 @@ st.markdown("---")
 tab1, tab2, tab3, tab4 = st.tabs([
     "📊 Rastreador de Flujos y Sectores", 
     "🎓 Filtros Leyendas (Buffett, Lynch, Graham)",
-    "🌍 Escáner de Índices Tradicional", 
+    "🛰️ Escáner de Índices Tradicional", 
     "🔍 Consulta Manual Avanzada"
 ])
 
-# POOL MAESTRO EXTENDIDO
+# POOL MAESTRO EXTENDIDO (Para flujos y filtros generales)
 pool_maestro_acciones = {
     "AAPL": "Tecnología / Hardware", "MSFT": "Tecnología / Software", "NVDA": "Semiconductores", 
     "AVGO": "Semiconductores", "GOOGL": "Servicios de Comunicación", "META": "Servicios de Comunicación",
@@ -237,12 +237,119 @@ with tab2:
                 pass
         if resultados_maestros: st.dataframe(pd.DataFrame(resultados_maestros), use_container_width=True)
 
-# PESTAÑA 3: ESCÁNER TRADICIONAL POR ÍNDICES
+# =====================================================================
+# PESTAÑA 3 COMPLETA: ESCÁNER DE ÍNDICES TRADICIONAL
+# =====================================================================
 with tab3:
-    st.subheader("🛰️ Análisis de Índices y Extracción Automatizada")
+    st.subheader("🛰️ Escáner de Índices Bursátiles y Selección de Asimetrías")
+    st.write("Selecciona un índice bursátil para auditar de forma masiva sus activos bajo modelos de valor intrínseco y momentum cuántico.")
+
+    # Diccionario de Índices con muestras representativas líquidas institucionales
+    indices_disponibles = {
+        "S&P 500 Core (Top Acciones Líderes)": ["AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "BRK-B", "JPM", "XOM", "LLY", "PG", "JNJ", "TSLA", "WMT", "COST"],
+        "NASDAQ 100 Tech Focus": ["AAPL", "MSFT", "NVDA", "AVGO", "META", "GOOG", "AMZN", "COST", "NFLX", "AMD", "INTC", "QCOM", "TXN", "HON", "AMAT"],
+        "Dow Jones Industrial Average": ["BA", "CAT", "CRM", "CVX", "DIS", "GS", "HD", "HON", "IBM", "JNJ", "JPM", "KO", "MCD", "MMM", "MSFT", "NKE", "PG", "TRV", "UNH", "VZ", "WMT"],
+        "Russell 2000 & Sectores de Alto Crecimiento (Uranio, FinTech, Neobancos)": ["CCJ", "OKLO", "NU", "SQ", "SMR", "UUUU", "URNM", "SRUUF", "NXE", "LEU", "MELI", "SOFI", "UPST"]
+    }
+
+    indice_seleccionado = st.selectbox("Selecciona el índice que deseas que la IA escanee:", list(indices_disponibles.keys()))
+    lista_tickers = indices_disponibles[indice_seleccionado]
+
+    if st.button("⚡ Iniciar Escaneo Cuántico del Índice", key="btn_escanear_indice"):
+        resultados_indice = []
+        progreso_i = st.progress(0)
+        total_i = len(lista_tickers)
+        
+        with st.spinner(f"Analizando componentes de {indice_seleccionado}..."):
+            for idx, ticker in enumerate(lista_tickers):
+                try:
+                    acc = yf.Ticker(ticker)
+                    inf = acc.info
+                    p_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
+                    if p_actual == 0: continue
+                    
+                    eps = inf.get('trailingEps', 0) or 0
+                    roe = inf.get('returnOnEquity', 0) or 0
+                    growth = inf.get('earningsGrowth', 0.05) or 0.05
+                    if growth <= 0: growth = 0.05
+                    book_value = inf.get('bookValue', 0) or 0
+                    peg_ratio = inf.get('pegRatio', 0) or 0
+                    vol_hoy = inf.get('volume', 1) or 1
+                    vol_prom = inf.get('averageVolume', 1) or 1
+                    aceleracion_vol = vol_hoy / vol_prom
+                    
+                    # Modelado de Valor Intrínseco Cruzado (Fórmulas Graham & Buffett)
+                    v_intrinseco_graham = (22.5 * eps * book_value) ** 0.5 if (eps > 0 and book_value > 0) else 0
+                    v_intrinseco_buffett = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
+                    v_intrinseco_real = max(v_intrinseco_graham, v_intrinseco_buffett)
+                    
+                    # Cálculo de Margen de Seguridad Consolidado
+                    margen_seguridad = ((v_intrinseco_real - p_actual) / v_intrinseco_real) * 100 if v_intrinseco_real > p_actual else 0.0
+                    
+                    # Proyecciones de Retorno (%)
+                    ganancia_largo = ((v_intrinseco_real - p_actual) / p_actual) * 100 if v_intrinseco_real > p_actual else 0.0
+                    
+                    v_intrinseco_lynch = p_actual * (1.2 / peg_ratio) if peg_ratio > 0.1 else p_actual
+                    ganancia_corto = ((v_intrinseco_lynch - p_actual) / p_actual) * 100 if v_intrinseco_lynch > p_actual else 0.0
+                    if aceleracion_vol >= filtro_volumen and ganancia_corto == 0:
+                        ganancia_corto = (aceleracion_vol * 5.0) # Estimación de momentum técnico por flujo institucional
+                    
+                    # Solo añadir si ofrece asimetría o ventaja competitiva mínima
+                    resultados_indice.append({
+                        "Ticker": ticker,
+                        "Empresa": inf.get('shortName', ticker),
+                        "Precio Actual": p_actual,
+                        "Valor Intrínseco": v_intrinseco_real,
+                        "Margen de Seguridad": margen_seguridad,
+                        "Ganancia Corto Plazo": ganancia_corto,
+                        "Ganancia Largo Plazo": ganancia_largo,
+                        "ROE": roe
+                    })
+                except:
+                    pass
+                progreso_i.progress((idx + 1) / total_i)
+                
+        if resultados_indice:
+            df_res = pd.DataFrame(resultados_indice)
+            
+            # Formatear el DataFrame para presentación ejecutiva visual
+            df_vista = df_res.copy()
+            df_vista["Precio Actual"] = df_vista["Precio Actual"].map(lambda x: f"${x:,.2f}")
+            df_vista["Valor Intrínseco"] = df_vista["Valor Intrínseco"].map(lambda x: f"${x:,.2f}" if x > 0 else "N/A")
+            df_vista["Margen de Seguridad"] = df_vista["Margen de Seguridad"].map(lambda x: f"{x:.1f}%")
+            df_vista["Ganancia Corto Plazo"] = df_vista["Ganancia Corto Plazo"].map(lambda x: f"+{x:.1f}%" if x > 0 else "0.0%")
+            df_vista["Ganancia Largo Plazo"] = df_vista["Ganancia Largo Plazo"].map(lambda x: f"+{x:.1f}%" if x > 0 else "0.0%")
+            df_vista["ROE"] = df_vista["ROE"].map(lambda x: f"{x*100:.1f}%")
+            
+            st.markdown("### 📋 Resultados Completos del Escaneo e Inteligencia Operativa")
+            st.dataframe(df_vista, use_container_width=True)
+            
+            # Filtrado estratégico inteligente en zonas calientes
+            st.markdown("---")
+            st.markdown("### 🎯 Conclusiones y Alertas de Inversión del Agente")
+            
+            col_rec1, col_rec2 = st.columns(2)
+            
+            with col_rec1:
+                st.markdown("#### 🔥 Máximo Atractivo de Corto Plazo (Momentum e Inyección)")
+                df_top_corto = df_res.sort_values(by="Ganancia Corto Plazo", ascending=False).head(3)
+                for _, r in df_top_corto.iterrows():
+                    if r["Ganancia Corto Plazo"] > 0:
+                        st.success(f"**{r['Ticker']}** ({r['Empresa']}) | Rendimiento Proyectado: **+{r['Ganancia Corto Plazo']:.1f}%** | Precio: ${r['Precio Actual']:.2f}")
+            
+            with col_rec2:
+                st.markdown("#### 🧱 Máximo Atractivo de Largo Plazo (Value e Infratasa)")
+                df_top_largo = df_res[df_res["Margen de Seguridad"] >= filtro_margen].sort_values(by="Margen de Seguridad", ascending=False).head(3)
+                if not df_top_largo.empty:
+                    for _, r in df_top_largo.iterrows():
+                        st.info(f"**{r['Ticker']}** ({r['Empresa']}) | Margen Seguridad: **{r['Margen de Seguridad']:.1f}%** | Ganancia Proyectada: **+{r['Ganancia Largo Plazo']:.1f}%**")
+                else:
+                    st.write("No se encontraron activos en este índice que superen el margen de seguridad mínimo configurado en el panel lateral.")
+        else:
+            st.error("No se pudieron extraer métricas fundamentales del índice seleccionado en este momento.")
 
 # =====================================================================
-# PESTAÑA 4 MODIFICADA: CONSULTA MANUAL AVANZADA DE VALOR
+# PESTAÑA 4: CONSULTA MANUAL AVANZADA DE VALOR
 # =====================================================================
 with tab4:
     st.subheader("🔍 Auditoría Manual Analítica A Demanda")
@@ -256,12 +363,10 @@ with tab4:
                 asset = yf.Ticker(ticker_usuario)
                 inf = asset.info
                 
-                # Precios y Volumen
                 p_actual = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
                 if p_actual == 0:
                     st.error("No se pudo obtener la cotización del activo en tiempo real. Comprueba si el ticker es correcto en Yahoo Finance.")
                 else:
-                    # Datos fundamentales clave extraídos
                     eps = inf.get('trailingEps', 0) or 0
                     roe = inf.get('returnOnEquity', 0) or 0
                     growth = inf.get('earningsGrowth', 0.05) or 0.05
@@ -276,24 +381,19 @@ with tab4:
                     st.markdown(f"**Sector:** {inf.get('sector', 'No Especificado')} | **Industria:** {inf.get('industry', 'No Especificado')}")
                     st.markdown("---")
                     
-                    # --- 1. MODELADO DE VALOR INTRÍNSECO (VALORACIÓN SOBERANA) ---
                     st.markdown("### 🧮 Modelos de Tasación de los Maestros")
                     
-                    # Fórmulas Matemáticas
                     v_intrinseco_graham = (22.5 * eps * book_value) ** 0.5 if (eps > 0 and book_value > 0) else 0
                     v_intrinseco_buffett = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
                     v_intrinseco_lynch = p_actual * (1.2 / peg_ratio) if peg_ratio > 0.1 else 0
                     
-                    # Márgenes de Seguridad Individuales
                     margen_graham = ((v_intrinseco_graham - p_actual) / v_intrinseco_graham) * 100 if v_intrinseco_graham > p_actual else 0
                     margen_buffett = ((v_intrinseco_buffett - p_actual) / v_intrinseco_buffett) * 100 if v_intrinseco_buffett > p_actual else 0
                     
-                    # Proyecciones de ganancias (%)
                     rendimiento_largo = max(((v_intrinseco_buffett - p_actual) / p_actual) * 100, 0) if v_intrinseco_buffett > 0 else 0
                     rendimiento_corto = ((v_intrinseco_lynch - p_actual) / p_actual) * 100 if v_intrinseco_lynch > 0 else 0
-                    if rendimiento_corto < 0: rendimiento_corto = 0 # No mostrar pérdidas si el crecimiento no acompaña
+                    if rendimiento_corto < 0: rendimiento_corto = 0
                     
-                    # UI de Bloques para los Modelos
                     c1, c2, c3 = st.columns(3)
                     with c1:
                         st.markdown("**Fórmula de Benjamin Graham**")
@@ -310,31 +410,24 @@ with tab4:
 
                     st.markdown("---")
                     
-                    # --- 2. RETORNO ESTIMADO POR HORIZONTE (CORTO VS LARGO PLAZO) ---
                     st.markdown("### 📈 Proyección de Ganancias Potenciales y Target")
-                    
                     col_corto, col_largo = st.columns(2)
                     
                     with col_corto:
                         st.markdown("#### ⏳ Horizonte de Corto Plazo (Momentum / Reversión PEG)")
-                        st.write("Basado en el ritmo de inyección institucional actual y el crecimiento relativo a su múltiplo PER:")
                         st.metric("Rendimiento Proyectado (Corto Plazo)", f"{rendimiento_corto:+.2f}%")
                         st.progress(min(int(max(rendimiento_corto, 0)), 100) / 100)
                         st.caption(f"Aceleración del volumen institucional en la sesión de hoy: {aceleracion_vol:.2f}x")
                         
                     with col_largo:
                         st.markdown("#### 🧱 Horizonte de Largo Plazo (Valor Compuesto / Intínseco)")
-                        st.write("Basado en la convergencia del precio hacia su capacidad de generar flujos y el ROE del negocio:")
                         st.metric("Rendimiento Proyectado (Largo Plazo)", f"{rendimiento_largo:+.2f}%")
                         st.progress(min(int(max(rendimiento_largo, 0)), 100) / 100)
                         st.caption(f"Retorno sobre Capital de la Empresa (ROE real): {roe * 100:.2f}%")
 
                     st.markdown("---")
-                    
-                    # --- 3. DICTAMEN FINAL DEL AGENTE IA ---
                     st.markdown("### 🤖 Dictamen de Calificación de la IA")
                     
-                    # Lógica de recomendación cruzada inteligente
                     margen_maximo = max(margen_graham, margen_buffett)
                     
                     if margen_maximo >= filtro_margen and roe >= filtro_roe:
@@ -345,4 +438,4 @@ with tab4:
                         st.error(f"🔴 **MANTENER / FUERA DEL RADAR:** El activo `{ticker_usuario}` no ofrece suficiente margen de protección frente a su precio actual. El mercado ya lo está tasando de manera justa o sobrevalorada. El agente recomienda buscar alternativas con mejores asimetrías de riesgo/beneficio.")
                         
             except Exception as e:
-                st.error(f"Error crítico en el minado de datos del ticker: {e}. Asegúrate de ingresar las siglas válidas (ejemplo: 'NU' para Nu Holdings, 'AAPL' para Apple).")
+                st.error(f"Error crítico en el minado de datos del ticker: {e}.")
