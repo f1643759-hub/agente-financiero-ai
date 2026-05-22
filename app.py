@@ -4,333 +4,333 @@ import pandas as pd
 import sqlite3
 from datetime import datetime
 
-st.set_page_config(page_title="Agente Financiero Matemático Autónomo", layout="wide")
+st.set_page_config(page_title="Agente Financiero Inteligente", layout="wide")
 
 # =====================================================================
-# 1. BASE DE DATOS LOCAL A COSTO CERO (SQLite3)
+# 1. ARQUITECTURA DE MEMORIA Y AUTO-APRENDIZAJE (SQLite3)
 # =====================================================================
-def inicializar_sistema_memoria():
-    """Crea el almacenamiento local en tu PC para guardar las calibraciones del agente"""
-    conn = sqlite3.connect('agente_inteligente.db')
+def inicializar_cerebro_agente():
+    conn = sqlite3.connect('agente_financiero.db')
     cursor = conn.cursor()
     
-    # Tabla para registrar las compras recomendadas y medir su rendimiento real
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS decisiones_radar (
+        CREATE TABLE IF NOT EXISTS radar_inversiones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             fecha_registro TEXT,
             ticker TEXT,
-            empresa TEXT,
             precio_entrada REAL,
-            valor_intrinseco REAL,
-            decision_tomada TEXT,
-            plazo_sugerido TEXT,
-            evaluado INTEGER DEFAULT 0,
-            rendimiento_posterior REAL DEFAULT 0.0
+            horizonte TEXT,
+            evaluado INTEGER DEFAULT 0
         )
     ''')
     
-    # Tabla para que el algoritmo aprenda de sus desviaciones matemáticas
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bitacora_errores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fecha_leccion TEXT,
-            ticker TEXT,
-            leccion_clave TEXT,
-            ajuste_filtro TEXT
-        )
-    ''')
-
-    # Tabla de filtros auto-calibrados (El algoritmo los endurece solo si detecta pérdidas)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS filtros_calibrados (
+        CREATE TABLE IF NOT EXISTS configuracion_filtros (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             roe_minimo REAL DEFAULT 0.15,
-            margen_seguridad_minimo REAL DEFAULT 20.0,
-            aceleracion_volumen_minima REAL DEFAULT 1.15
+            margen_seguridad REAL DEFAULT 20.0,
+            aceleracion_volumen REAL DEFAULT 1.2
         )
     ''')
     
-    cursor.execute("SELECT COUNT(*) FROM filtros_calibrados")
+    cursor.execute("SELECT COUNT(*) FROM configuracion_filtros")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO filtros_calibrados (roe_minimo, margen_seguridad_minimo, aceleracion_volumen_minima) VALUES (0.15, 20.0, 1.15)")
+        cursor.execute("INSERT INTO configuracion_filtros (roe_minimo, margen_seguridad, aceleracion_volumen) VALUES (0.15, 20.0, 1.2)")
         
     conn.commit()
     conn.close()
 
-inicializar_sistema_memoria()
-
-# =====================================================================
-# 2. MOTOR LOCAL DE APRENDIZAJE POR REFUERZO CUANTITATIVO
-# =====================================================================
-def ejecutar_auto_perfeccionamiento():
-    """El algoritmo revisa los precios reales del mercado y ajusta sus propias fórmulas de selección de forma independiente"""
-    conn = sqlite3.connect('agente_inteligente.db')
+def bucle_aprendizaje_autonomo():
+    conn = sqlite3.connect('agente_financiero.db')
     cursor = conn.cursor()
     
-    df_pendientes = pd.read_sql_query("SELECT * FROM decisiones_radar WHERE evaluado = 0", conn)
+    df_radar = pd.read_sql_query("SELECT * FROM radar_inversiones WHERE evaluado = 0", conn)
+    cursor.execute("SELECT roe_minimo, margen_seguridad, aceleracion_volumen FROM configuracion_filtros ORDER BY id DESC LIMIT 1")
+    roe_act, margen_act, vol_act = cursor.fetchone()
     
-    cursor.execute("SELECT roe_minimo, margen_seguridad_minimo, aceleracion_volumen_minima FROM filtros_calibrados ORDER BY id DESC LIMIT 1")
-    roe_actual, margen_actual, vol_actual = cursor.fetchone()
+    aciertos = 0
+    errores = 0
     
-    errores_nuevos = 0
-    aciertos_nuevos = 0
-    
-    if not df_pendientes.empty:
-        for index, row in df_pendientes.iterrows():
-            id_registro = row['id']
+    if not df_radar.empty:
+        for _, row in df_radar.iterrows():
             ticker = row['ticker']
-            precio_entrada = row['precio_entrada']
-            
+            p_entrada = row['precio_entrada']
             try:
-                stock = yf.Ticker(ticker)
-                precio_actual = stock.history(period="1d")['Close'].iloc[-1]
-                rendimiento = ((precio_actual - precio_entrada) / precio_entrada) * 100
+                t_obj = yf.Ticker(ticker)
+                p_actual = t_obj.history(period="1d")['Close'].iloc[-1]
+                rendimiento = ((p_actual - p_entrada) / p_entrada) * 100
                 
-                if rendimiento < -3.5:
-                    errores_nuevos += 1
-                    leccion = f"Desviación en {ticker}: Caída de {rendimiento:.2f}%."
-                    ajuste = "Incrementar restricción matemática de entrada."
-                    cursor.execute("INSERT INTO bitacora_errores (fecha_leccion, ticker, leccion_clave, ajuste_filtro) VALUES (?, ?, ?, ?)",
-                                   (datetime.now().strftime("%Y-%m-%d"), ticker, leccion, ajuste))
-                elif rendimiento > 3.5:
-                    aciertos_nuevos += 1
-                
-                cursor.execute("UPDATE decisiones_radar SET evaluado = 1, rendimiento_posterior = ? WHERE id = ?", (rendimiento, id_registro))
+                if rendimiento < -4.0:
+                    errores += 1
+                elif rendimiento > 4.0:
+                    aciertos += 1
+                    
+                cursor.execute("UPDATE radar_inversiones SET evaluado = 1 WHERE id = ?", (row['id'],))
             except:
                 continue
-    
-    # Si las matemáticas fallaron en las últimas elecciones, el algoritmo se vuelve más estricto de forma autónoma
-    if errores_nuevos > aciertos_nuevos:
-        nuevo_roe = min(roe_actual + 0.02, 0.25)
-        nuevo_margen = min(margen_actual + 2.5, 35.0)
-        nuevo_vol = min(vol_actual + 0.05, 1.50)
-        cursor.execute("INSERT INTO filtros_calibrados (roe_minimo, margen_seguridad_minimo, aceleracion_volumen_minima) VALUES (?, ?, ?)",
+                
+    if errores > aciertos:
+        nuevo_roe = min(roe_act + 0.02, 0.25)
+        nuevo_margen = min(margen_act + 2.5, 35.0)
+        nuevo_vol = min(vol_act + 0.1, 1.8)
+        cursor.execute("INSERT INTO configuracion_filtros (roe_minimo, margen_seguridad, aceleracion_volumen) VALUES (?, ?, ?)",
                        (nuevo_roe, nuevo_margen, nuevo_vol))
-        mensaje = f"⚠️ Optimización Matemática Local: El agente aumentó sus restricciones de seguridad de forma autónoma (Nuevo ROE Mín: {nuevo_roe*100:.1f}%, Nuevo Margen Graham Mín: {nuevo_margen:.1f}%)."
+        msg = f"🧠 Optimización Autónoma Completa: Filtros ajustados (ROE Mín: {nuevo_roe*100:.1f}%, Margen Mín: {nuevo_margen:.1f}%)."
     else:
-        mensaje = "✅ El nivel de asertividad matemática actual es óptimo. Los filtros están capturando ganancias de forma efectiva."
+        msg = "✅ El balance de asertividad matemática es óptimo bajo las condiciones actuales de mercado."
         
     conn.commit()
     conn.close()
-    return mensaje
+    return msg
 
-# =====================================================================
-# 3. INTERFAZ GRÁFICA DE STREAMLIT
-# =====================================================================
-st.title("🤖 Agente Financiero Matemático Autónomo")
-st.markdown("### Terminal de Inversión Basada en Arbitraje Estadístico Local — Costo Mensual: $0.00")
-st.markdown("---")
+inicializar_cerebro_agente()
 
-tab1, tab2, tab3 = st.tabs([
-    "🔍 Auditoría Manual (Filtros de Valor)", 
-    "🌍 Escáner Total de Índices y Selección de Plazos", 
-    "🧱 Rotación de Sectores y Flujo de Capital"
-])
-
-# Recuperar los filtros dinámicos recalculados por el propio código
-conn = sqlite3.connect('agente_inteligente.db')
+conn = sqlite3.connect('agente_financiero.db')
 cursor = conn.cursor()
-cursor.execute("SELECT roe_minimo, margen_seguridad_minimo, aceleracion_volumen_minima FROM filtros_calibrados ORDER BY id DESC LIMIT 1")
+cursor.execute("SELECT roe_minimo, margen_seguridad, aceleracion_volumen FROM configuracion_filtros ORDER BY id DESC LIMIT 1")
 filtro_roe, filtro_margen, filtro_volumen = cursor.fetchone()
 conn.close()
 
-# Panel Lateral de Métricas Adaptativas
-st.sidebar.markdown("### 📊 Filtros Matemáticos Activos")
-st.sidebar.write("El sistema modifica estos umbrales lógicos de forma independiente según los rendimientos históricos:")
-st.sidebar.metric("ROE Mínimo Requerido", f"{filtro_roe*100:.1f}%")
-st.sidebar.metric("Margen de Seguridad de Graham", f"{filtro_margen:.1f}%")
-st.sidebar.metric("Volumen Institucional Mínimo", f"{filtro_volumen:.2f}x")
+# =====================================================================
+# 2. PANEL LATERAL DE CONTROL COGNITIVO
+# =====================================================================
+st.sidebar.markdown("### 🧠 Filtros Calibrados de la IA")
+st.sidebar.metric("Exigencia ROE Mínimo", f"{filtro_roe * 100:.1f}%")
+st.sidebar.metric("Margen de Seguridad Mín.", f"{filtro_margen:.1f}%")
+st.sidebar.metric("Aceleración de Volumen Mín.", f"{filtro_volumen:.2f}x")
 
 # =====================================================================
-# PESTAÑA 1: AUDITORÍA MANUAL
+# 3. INTERFAZ GRÁFICA PRINCIPAL
 # =====================================================================
+st.title("🤖 Agente IA Financiero Profesional Autónomo")
+st.markdown("### Escáner Global, Rotación de Sectores y Rastreo de Flujos Dinámicos")
+st.markdown("---")
+
+tab1, tab2, tab3 = st.tabs(["📊 Rastreador de Flujos y Sectores", "🌍 Escáner de Índices Tradicional", "🔍 Consulta Manual"])
+
+# PESTAÑA 1: NUEVO ESCÁNER DE ENTRADAS DE CAPITAL Y ROTACIÓN SECTORIAL
 with tab1:
-    st.subheader("🔍 Auditoría Manual de un Activo")
-    st.write("Verifica instantáneamente si una acción cumple con los criterios de Benjamin Graham modificados por el algoritmo local.")
+    st.subheader("📡 Monitor de Flujos de Capital y Rotación Macroeconómica")
+    st.write("El agente analizará los activos institucionales líderes para rastrear el volumen en dólares inyectado hoy y mapear hacia dónde está migrando el dinero.")
     
-    ticker_manual = st.text_input("Introduce el Ticker de la Acción (ej: AAPL, MSFT, TSLA):", "AAPL").strip().upper()
-    
-    if st.button("🚀 Iniciar Auditoría Matemática", key="btn_p1"):
-        if ticker_manual:
-            with st.spinner(f"Calculando métricas locales para {ticker_manual}..."):
-                try:
-                    asset = yf.Ticker(ticker_manual)
-                    info = asset.info
-                    
-                    px = info.get('currentPrice') or info.get('regularMarketPrice', 0)
-                    eps = info.get('trailingEps', 0)
-                    growth = info.get('earningsGrowth', 0.05) or 0.05
-                    if growth <= 0: growth = 0.05
-                    
-                    if px == 0:
-                        st.error("No se pudieron cargar los precios de este activo.")
-                    else:
-                        st.markdown(f"### 🏢 {info.get('longName', ticker_manual)} — `${px:.2f}`")
-                        
-                        roe = info.get('returnOnEquity', 0)
-                        
-                        # Fórmula matemática pura de Valor Intrínseco de Benjamin Graham
-                        valor_graham = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
-                        margen_seguridad_real = ((valor_graham - px) / valor_graham) * 100 if valor_graham > 0 else 0
-                        
-                        c1, c2, c3 = st.columns(3)
-                        with c1:
-                            st.metric("ROE de la Empresa", f"{roe*100:.2f}%", f"Requerido: {filtro_roe*100:.1f}%")
-                        with c2:
-                            st.metric("Margen de Seguridad Real", f"{margen_seguridad_real:.1f}%", f"Requerido: {filtro_margen:.1f}%")
-                        with c3:
-                            st.metric("Precio Justo Estimado", f"${valor_graham:.2f}")
-                        
-                        # Filtro lógico determinista local (Sin necesidad de IA externa)
-                        cumple_roe = roe >= filtro_roe
-                        cumple_margen = margen_seguridad_real >= filtro_margen
-                        
-                        st.markdown("#### ⚖️ Dictamen del Algoritmo Local:")
-                        if cumple_roe and cumple_margen:
-                            st.success(f"📈 **DICTAMEN: COMPRAR**. El activo supera el ROE exigido y ofrece un margen de seguridad óptimo frente a su valor de Graham.")
-                            decision_final = "COMPRAR"
-                        else:
-                            razones = []
-                            if not cumple_roe: razones.append(f"ROE insuficiente ({roe*100:.1f}% vs {filtro_roe*100:.1f}% exigido)")
-                            if not cumple_margen: razones.append(f"Margen de seguridad bajo ({margen_seguridad_real:.1f}% vs {filtro_margen:.1f}% exigido)")
-                            st.error(f"❌ **DICTAMEN: NO INVERTIR**. Razones: {', '.join(razones)}.")
-                            decision_final = "NO INVERTIR"
-                        
-                        # Registrar decisión localmente
-                        conn = sqlite3.connect('agente_inteligente.db')
-                        cursor = conn.cursor()
-                        cursor.execute('''
-                            INSERT INTO decisiones_radar 
-                            (fecha_registro, ticker, empresa, precio_entrada, valor_intrinseco, decision_tomada, plazo_sugerido)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (datetime.now().strftime("%Y-%m-%d"), ticker_manual, info.get('longName', ticker_manual), float(px), float(valor_graham), decision_final, "Manual"))
-                        conn.commit()
-                        conn.close()
-                except Exception as e:
-                    st.error(f"Error al procesar el ticker: {e}")
-
-# =====================================================================
-# PESTAÑA 2: ESCÁNER TOTAL DE ÍNDICES MUNDIALES Y SELECCIÓN DE PLAZOS
-# =====================================================================
-with tab2:
-    st.subheader("🌍 Escáner de Índices Globales y Segmentación Eficiente")
-    st.write("El sistema analiza matemáticamente los componentes de los principales mercados para filtrar oportunidades por plazos.")
-    
-    if st.button("🛰️ Ejecutar Escáner Total de Mercados Mundiales", key="btn_p2"):
-        indices_globales = {
-            "S&P 500 (EE.UU)": {"ticker": "^GSPC", "pool": ["AAPL", "MSFT", "AMZN", "NVDA", "JPM"]},
-            "NASDAQ 100 (EE.UU)": {"ticker": "^IXIC", "pool": ["GOOGL", "META", "AVGO", "COST", "NFLX"]},
-            "EURO STOXX 50 (Europa)": {"ticker": "^STOXX50E", "pool": ["ASML", "MC.PA", "OR.PA", "SAP", "SIE.DE"]},
-            "IBOVESPA (Brasil)": {"ticker": "^BVSP", "pool": ["VALE3.SA", "PETR4.SA", "ITUB4.SA", "BBDC4.SA", "ABEV3.SA"]}
+    if st.button("🔍 Escanear Rotación de Capital Global", key="btn_flujos"):
+        # Pool maestro representativo de los principales sectores económicos globales
+        pool_maestro = {
+            "AAPL": "Tecnología / Hardware", "MSFT": "Tecnología / Software", "NVDA": "Semiconductores", 
+            "AVGO": "Semiconductores", "GOOGL": "Servicios de Comunicación", "META": "Servicios de Comunicación",
+            "AMZN": "Consumo Cíclico", "TSLA": "Automotriz / Energía", "COST": "Consumo Defensivo",
+            "WMT": "Consumo Defensivo", "JPM": "Financiero / Banca", "BAC": "Financiero / Banca",
+            "XOM": "Energía / Petróleo", "CVX": "Energía / Petróleo", "LLY": "Salud / Farmacéutica",
+            "JNJ": "Salud / Farmacéutica", "CAT": "Industrial", "GE": "Industrial",
+            "CCJ": "Energía Nuclear / Uranio", "OKLO": "Energía Nuclear / Innovación", 
+            "NU": "Fintech / Neobancos", "SQ": "Fintech / Pagos"
         }
         
-        datos_escaneo_indices = []
-        pool_acciones_recopiladas = []
+        datos_flujo = []
+        progreso_f = st.progress(0)
+        total_activos = len(pool_maestro)
         
-        for nombre_indice, config in indices_globales.items():
+        for idx, (ticker, sector) in enumerate(pool_maestro.items()):
             try:
-                ind_obj = yf.Ticker(config["ticker"])
-                hist_ind = ind_obj.history(period="5d")
+                acc = yf.Ticker(ticker)
+                inf = acc.info
                 
-                if len(hist_ind) >= 2:
-                    precio_cierre = hist_ind['Close'].iloc[-1]
-                    cambio_diario = ((hist_ind['Close'].iloc[-1] - hist_ind['Close'].iloc[-2]) / hist_ind['Close'].iloc[-2]) * 100
-                    cambio_semanal = ((hist_ind['Close'].iloc[-1] - hist_ind['Close'].iloc[0]) / hist_ind['Close'].iloc[0]) * 100
+                precio = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
+                vol_hoy = inf.get('volume', 0) or 0
+                vol_prom = inf.get('averageVolume', 1) or 1
+                
+                if precio > 0 and vol_hoy > 0:
+                    # Dinero en circulación hoy en este activo (Precio * Volumen)
+                    capital_movilizado = precio * vol_hoy
+                    anomalia_volumen = vol_hoy / vol_prom
                     
-                    datos_escaneo_indices.append({
-                        "Índice Bursátil": nombre_indice, "Ticker Ref": config["ticker"], "Nivel Actual": f"{precio_cierre:,.2f}",
-                        "Var. Diaria": f"{cambio_diario:+.2f}%", "Var. Semanal": f"{cambio_semanal:+.2f}%",
-                        "Diagnóstico Macro": "🟢 Mercado Fuerte" if cambio_diario > 0 else "🔴 Mercado en Retroceso"
+                    datos_flujo.append({
+                        "Ticker": ticker,
+                        "Empresa": inf.get('longName', ticker),
+                        "Sector": sector,
+                        "Precio": precio,
+                        "Volumen Hoy": vol_hoy,
+                        "Anomalía Flujo": anomalia_volumen,
+                        "Capital Efectivo (USD)": capital_movilizado
+                    })
+            except:
+                pass
+            progreso_f.progress((idx + 1) / total_activos)
+            
+        if datos_flujo:
+            df_flujo = pd.DataFrame(datos_flujo)
+            
+            # --- 1. ACCIONES CON MAYOR ENTRADA DE CAPITAL ---
+            st.markdown("### 🔝 Top Acciones con Mayor Inyección Financiera Directa")
+            st.write("Ordenadas por volumen total en dólares transaccionados en la sesión actual:")
+            
+            df_top_cap = df_flujo.sort_values(by="Capital Efectivo (USD)", ascending=False).head(8)
+            
+            # Formatear la visualización para el usuario de manera profesional
+            df_mostrar_top = df_top_cap.copy()
+            df_mostrar_top["Capital Efectivo (USD)"] = df_mostrar_top["Capital Efectivo (USD)"].map(lambda x: f"${x:,.2f}")
+            df_mostrar_top["Precio"] = df_mostrar_top["Precio"].map(lambda x: f"${x:.2f}")
+            df_mostrar_top["Anomalía Flujo"] = df_mostrar_top["Anomalía Flujo"].map(lambda x: f"{x:.2f}x")
+            
+            st.dataframe(df_mostrar_top[["Ticker", "Empresa", "Sector", "Precio", "Anomalía Flujo", "Capital Efectivo (USD)"]], use_container_width=True)
+            
+            # --- 2. ACCIONES CON ANOMALÍAS DE VOLUMEN (Corto Plazo / Rupturas) ---
+            st.markdown("### 🚨 Alertas de Volumen Súbito (Institucionales Comprando en Masa)")
+            st.write(f"Acciones cuyo volumen actual supera el promedio habitual por más de **{filtro_volumen}x**:")
+            
+            df_anomalias = df_flujo[df_flujo["Anomalía Flujo"] >= filtro_volumen].sort_values(by="Anomalía Flujo", ascending=False)
+            
+            if not df_anomalias.empty:
+                df_mostrar_anom = df_anomalias.copy()
+                df_mostrar_anom["Capital Efectivo (USD)"] = df_mostrar_anom["Capital Efectivo (USD)"].map(lambda x: f"${x:,.2f}")
+                df_mostrar_anom["Precio"] = df_mostrar_anom["Precio"].map(lambda x: f"${x:.2f}")
+                df_mostrar_anom["Anomalía Flujo"] = df_mostrar_anom["Anomalía Flujo"].map(lambda x: f"{x:.2f}x")
+                st.dataframe(df_mostrar_anom[["Ticker", "Empresa", "Sector", "Precio", "Anomalía Flujo", "Capital Efectivo (USD)"]], use_container_width=True)
+            else:
+                st.info("Ningún activo presenta una anomalía crítica de volumen en este preciso instante.")
+            
+            # --- 3. ANÁLISIS DE MIGRACIÓN SECTORIAL ---
+            st.markdown("### 🌍 ¿Hacia dónde está migrando el dinero? (Análisis por Sectores)")
+            st.write("Consolidación del flujo de dinero institucional agrupado por industrias:")
+            
+            df_sectores = df_flujo.groupby("Sector").agg({
+                "Capital Efectivo (USD)": "sum",
+                "Anomalía Flujo": "mean"
+            }).reset_index()
+            
+            df_sectores = df_sectores.sort_values(by="Capital Efectivo (USD)", ascending=False)
+            
+            # Formatear tabla sectorial
+            df_sectores_show = df_sectores.copy()
+            df_sectores_show["Capital Efectivo (USD)"] = df_sectores_show["Capital Efectivo (USD)"].map(lambda x: f"${x:,.2f}")
+            df_sectores_show["Anomalía Flujo"] = df_sectores_show["Anomalía Flujo"].map(lambda x: f"{x:.2f}x (Promedio)")
+            
+            st.dataframe(df_sectores_show, use_container_width=True)
+            
+            # Dictamen del agente sobre la rotación
+            top_sector = df_sectores.iloc[0]["Sector"]
+            st.success(f"🧠 **Dictamen del Agente sobre Flujo Macro:** El dinero institucional está concentrándose con mayor fuerza en el sector **{top_sector}**. Busca oportunidades individuales dentro de este sector en la pestaña de consulta manual.")
+        else:
+            st.error("No se pudieron recopilar métricas de flujo en este momento. Revisa tu conexión de red.")
+
+# PESTAÑA 2: ESCÁNER TRADICIONAL POR ÍNDICES
+with tab2:
+    st.subheader("🛰️ Análisis de Índices y Extracción Automatizada")
+    if st.button("🚀 Ejecutar Escáner Global por Índices", key="btn_escaneo"):
+        mercados_mundiales = {
+            "S&P 500 (EE.UU)": {"simbolo": "^GSPC", "pool": ["AAPL", "MSFT", "AMZN", "NVDA", "JPM", "GOOGL"]},
+            "NASDAQ 100 (EE.UU)": {"simbolo": "^IXIC", "pool": ["META", "TSLA", "AVGO", "COST", "NFLX"]},
+            "EURO STOXX 50 (Europa)": {"simbolo": "^STOXX50E", "pool": ["ASML", "MC.PA", "SAP", "SIE.DE", "OR.PA"]},
+            "IBOVESPA (LatAm / Brasil)": {"simbolo": "^BVSP", "pool": ["VALE3.SA", "PETR4.SA", "ITUB4.SA", "ABEV3.SA"]}
+        }
+        
+        tabla_macro = []
+        oportunidades_corto = []
+        oportunidades_largo = []
+        
+        progreso = st.progress(0)
+        total_mercados = len(mercados_mundiales)
+        
+        for idx, (nombre_m, config) in enumerate(mercados_mundiales.items()):
+            try:
+                ind_obj = yf.Ticker(config["simbolo"])
+                hist_ind = ind_obj.history(period="5d")
+                if len(hist_ind) >= 2:
+                    p_cierre = hist_ind['Close'].iloc[-1]
+                    var_diaria = ((hist_ind['Close'].iloc[-1] - hist_ind['Close'].iloc[-2]) / hist_ind['Close'].iloc[-2]) * 100
+                    tabla_macro.append({
+                        "Mercado Global": nombre_m, "Puntos/Nivel": f"{p_cierre:,.2f}",
+                        "Variación Diaria": f"{var_diaria:+.2f}%", "Sesgo de Mercado": "🟢 Bullish" if var_diaria > 0 else "🔴 Bearish"
                     })
                 
-                for t_accion in config["pool"]:
+                for ticker in config["pool"]:
                     try:
-                        acc_obj = yf.Ticker(t_accion)
-                        inf_acc = acc_obj.info
+                        acc_obj = yf.Ticker(ticker)
+                        inf = acc_obj.info
                         hist_acc = acc_obj.history(period="5d")
-                        v_hoy = inf_acc.get('volume', 1) or 1
-                        v_prom = inf_acc.get('averageVolume', 1) or 1
+                        px = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
+                        if px == 0: continue
                         
-                        pool_acciones_recopiladas.append({
-                            "ticker": t_accion, "nombre": inf_acc.get('longName', t_accion), "indice_origen": nombre_indice,
-                            "precio": inf_acc.get('currentPrice') or inf_acc.get('regularMarketPrice', 0),
-                            "roe": inf_acc.get('returnOnEquity', 0),
-                            "margin_operativo": inf_acc.get('operatingMargins', 0),
-                            "aceleracion_volumen": v_hoy / v_prom,
-                            "retorno_5d": ((hist_acc['Close'].iloc[-1] - hist_acc['Close'].iloc[0]) / hist_acc['Close'].iloc[0]) * 100 if len(hist_acc) >= 2 else 0
-                        })
-                    except: continue
-            except: pass
+                        vol_hoy = inf.get('volume', 1) or 1
+                        vol_prom = inf.get('averageVolume', 1) or 1
+                        ratio_vol = vol_hoy / vol_prom
+                        
+                        if ratio_vol >= filtro_volumen:
+                            ret_5d = ((hist_acc['Close'].iloc[-1] - hist_acc['Close'].iloc[0]) / hist_acc['Close'].iloc[0]) * 100 if len(hist_acc) >= 2 else 0
+                            oportunidades_corto.append({
+                                "Ticker": ticker, "Empresa": inf.get('longName', ticker), "Precio": f"${px:.2f}",
+                                "Aceleración Flujo": f"{ratio_vol:.2f}x", "Rendimiento 5D": f"{ret_5d:+.2f}%"
+                            })
+                        
+                        roe = inf.get('returnOnEquity', 0)
+                        eps = inf.get('trailingEps', 0)
+                        growth = inf.get('earningsGrowth', 0.05) or 0.05
+                        if growth <= 0: growth = 0.05
+                        
+                        if roe >= filtro_roe and eps > 0:
+                            v_intrinseco = eps * (8.5 + (2 * (growth * 100)))
+                            margen_s = ((v_intrinseco - px) / v_intrinseco) * 100 if v_intrinseco > 0 else 0
+                            if margen_s >= filtro_margen:
+                                oportunidades_largo.append({
+                                    "Ticker": ticker, "Empresa": inf.get('longName', ticker), "Precio Actual": f"${px:.2f}",
+                                    "Valor Estimado": f"${v_intrinseco:.2f}", "Margen Seguridad": f"{margen_s:.1f}%", "ROE": f"{roe*100:.1f}%"
+                                })
+                    except:
+                        continue
+            except:
+                pass
+            progreso.progress((idx + 1) / total_mercados)
             
-        st.markdown("#### 📊 Situación Actual de los Índices del Mundo")
-        st.dataframe(pd.DataFrame(datos_escaneo_indices), use_container_width=True)
+        st.markdown("#### 📊 Estado de los Índices Mundiales")
+        st.dataframe(pd.DataFrame(tabla_macro), use_container_width=True)
         
-        df_pool = pd.DataFrame(pool_acciones_recopiladas)
-        if not df_pool.empty:
-            st.markdown("#### 🎯 Clasificación de Activos Basada en Filtros Matemáticos")
-            
-            # FILTRADO Y SEGMENTACIÓN POR PLAZOS MEDIANTE MATEMÁTICA PURA LOCAL
-            df_corto_plazo = df_pool[df_pool['aceleracion_volumen'] >= filtro_volumen].sort_values(by='retorno_5d', ascending=False)
-            df_largo_plazo = df_pool[df_pool['roe'] >= filtro_roe].sort_values(by='margin_operativo', ascending=False)
-            
-            col_p1, col_p2 = st.columns(2)
-            with col_p1:
-                st.success(f"⏳ **Ganancias Corto Plazo: Momentum de Volumen (> {filtro_volumen:.2f}x volumen)**")
-                st.write("Acciones con inyecciones masivas de volumen institucional listas para movimientos veloces:")
-                st.dataframe(df_corto_plazo[['ticker', 'nombre', 'precio', 'aceleracion_volumen', 'retorno_5d']], use_container_width=True)
-            with col_p2:
-                st.info(f"🧱 **Ganancias Largo Plazo: Calidad Estructural (ROE > {filtro_roe*100:.1f}%)**")
-                st.write("Empresas altamente rentables ideales para retornos consistentes compuestos en el tiempo:")
-                st.dataframe(df_largo_plazo[['ticker', 'nombre', 'precio', 'roe', 'margin_operativo']], use_container_width=True)
-                
-            # Registrar muestras automáticas en la base de datos local para auto-evaluación
-            conn = sqlite3.connect('agente_inteligente.db')
-            cursor = conn.cursor()
-            for t in df_corto_plazo.head(2)['ticker'].tolist() + df_largo_plazo.head(2)['ticker'].tolist():
-                cursor.execute("INSERT INTO decisiones_radar (fecha_registro, ticker, empresa, precio_entrada, valor_intrinseco, decision_tomada, plazo_sugerido) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                               (datetime.now().strftime("%Y-%m-%d"), t, t, 100.0, 0.0, "COMPRAR", "Escáner Local"))
-            conn.commit()
-            conn.close()
+        c_izq, c_der = st.columns(2)
+        with c_izq:
+            st.success("⏳ Oportunidades de Corto Plazo (Momentum)")
+            if oportunidades_corto: st.dataframe(pd.DataFrame(oportunidades_corto), use_container_width=True)
+            else: st.write("Sin anomalías detectadas.")
+        with c_der:
+            st.info("🧱 Oportunidades de Largo Plazo (Valor)")
+            if oportunidades_largo: st.dataframe(pd.DataFrame(oportunidades_largo), use_container_width=True)
+            else: st.write("Sin activos infravalorados bajo los filtros actuales.")
 
-    # --- PANEL DE CONTROL DE APRENDIZAJE DIARIO ---
     st.markdown("---")
-    st.subheader("🧠 Bucle de Auto-Calibración de Eficiencia")
-    st.write("Presiona este botón para que el código verifique el mercado y reajuste las fórmulas de selección automáticamente en base a aciertos y errores.")
-    
-    if st.button("🔄 Ejecutar Calibración y Aprendizaje Autónomo"):
-        mensaje_entrenamiento = ejecutar_auto_perfeccionamiento()
-        st.success(mensaje_entrenamiento)
+    st.subheader("⚙️ Panel de Auto-Mejoramiento")
+    if st.button("🔄 Ejecutar Bucle de Entrenamiento Automático"):
+        res_leccion = bucle_aprendizaje_autonomo()
+        st.success(res_leccion)
 
-# =====================================================================
-# PESTAÑA 3: ROTACIÓN DE SECTORES Y FLUJO DE CAPITAL
-# =====================================================================
+# PESTAÑA 3: CONSULTA MANUAL INDIVIDUAL
 with tab3:
-    st.subheader("🧱 Fuerza de Sectores e Inyección de Dinero")
-    st.write("Detecta hacia dónde se mueven los capitales institucionales de forma agregada a costo cero.")
+    st.subheader("🔍 Auditoría Manual a Demanda")
+    ticker_usuario = st.text_input("Ingresa el Ticker del activo:", "NU").strip().upper()
     
-    if st.button("🔄 Analizar Rotación de Capital Sectorial", key="btn_p3"):
-        etfs_sectores = {
-            "XLK": "Tecnología", "XLF": "Financiero", "XLV": "Salud", "XLE": "Energía", "XLY": "Consumo Discrecional"
-        }
-        
-        datos_sectores = []
-        for etf, nombre_sec in etfs_sectores.items():
+    if st.button("⚡ Auditar Activo"):
+        with st.spinner(f"Analizando {ticker_usuario}..."):
             try:
-                t_sector = yf.Ticker(etf)
-                inf_s = t_sector.info
-                vol_hoy = inf_s.get('volume', 1) or 1
-                vol_prom = inf_s.get('averageVolume', 1) or 1
-                ratio_flujo = vol_hoy / vol_prom
-                
-                hist_s = t_sector.history(period="5d")
-                ret_5d = ((hist_s['Close'].iloc[-1] - hist_s['Close'].iloc[0]) / hist_s['Close'].iloc[0]) * 100
-                
-                datos_sectores.append({
-                    "Sector Industrial": nombre_sec, "ETF Referencia": etf, "Rendimiento Semanal": f"{ret_5d:+.2f}%",
-                    "Aceleración de Flujo": f"{ratio_flujo:.2f}x",
-                    "Flujo Institucional": "🟢 Acumulación de Capital" if ratio_flujo > filtro_volumen else "🔴 Flujo Débil"
-                })
-            except: pass
-        if datos_sectores:
-            st.dataframe(pd.DataFrame(datos_sectores), use_container_width=True)
+                asset = yf.Ticker(ticker_usuario)
+                inf = asset.info
+                px = inf.get('currentPrice') or inf.get('regularMarketPrice', 0)
+                if px == 0:
+                    st.error("No se pudo hallar información de cotización.")
+                else:
+                    st.markdown(f"### 🏢 {inf.get('longName', ticker_usuario)} — `${px:.2f}`")
+                    roe = inf.get('returnOnEquity', 0)
+                    eps = inf.get('trailingEps', 0)
+                    growth = inf.get('earningsGrowth', 0.05) or 0.05
+                    if growth <= 0: growth = 0.05
+                    
+                    v_intrinseco = eps * (8.5 + (2 * (growth * 100))) if eps > 0 else 0
+                    margen_s = ((v_intrinseco - px) / v_intrinseco) * 100 if v_intrinseco > 0 else 0
+                    
+                    vol_hoy = inf.get('volume', 1) or 1
+                    vol_prom = inf.get('averageVolume', 1) or 1
+                    ratio_vol = vol_hoy / vol_prom
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    col1.metric("ROE", f"{roe * 100:.2f}%", f"Mín: {filtro_roe*100:.1f}%")
+                    col2.metric("Valor Justo", f"${v_intrinseco:.2f}")
+                    col3.metric("Margen Seguridad", f"{margen_s:.1f}%", f"Mín: {filtro_margen:.1f}%")
+                    col4.metric("Inyección Flujo", f"{ratio_vol:.2f}x", f"Mín: {filtro_volumen:.2f}x")
+            except Exception as e:
+                st.error(f"Error: {e}")
