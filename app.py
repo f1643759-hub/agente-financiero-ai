@@ -143,6 +143,13 @@ with tab2:
     
     margen_exigido = st.slider("Margen de Seguridad Mínimo Exigido (%)", 5, 40, 20, key="slider_macro_p2")
 
+    # Definimos las listas de tickers globales de forma accesible para la interfaz persistente
+    dict_sp500 = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "BRK-B", "V", "MA", "JPM", "BAC", "PG", "KO", "NKE", "TGT", "WMT", "JNJ", "PFE", "UNH", "XOM", "CVX", "HD", "COST", "PEP", "PM"]
+    dict_nasdaq = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "AMD", "QCOM", "INTC", "TSM", "ASML", "NFLX", "ADBE", "PANW", "SNPS", "CDNS", "MAR", "ORCL", "TXN"]
+    dict_dowjones = ["AAPL", "MSFT", "AMZN", "V", "JPM", "AXP", "PG", "KO", "WMT", "HD", "CAT", "DIS", "CVX", "BA", "HON", "IBM", "MMM", "GS", "UNH", "VZ"]
+    dict_russell2000 = ["CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "PDFS", "CEVA", "AEIS", "COHR", "UFPI", "AIT", "FIX", "AMN", "SPSC", "EGBN", "KNSL", "MEDP"]
+    pool_completo = list(set(dict_sp500 + dict_nasdaq + dict_dowjones + dict_russell2000))
+
     if st.button("🛰️ Lanzar Algoritmo de Búsqueda Global", key="btn_auto"):
         # 1. ESCANEO MASIVO DE TODOS LOS ÍNDICES DEL MUNDO
         indices_mundo_dict = {
@@ -187,14 +194,9 @@ with tab2:
                     pass
         st.session_state.indices_radar = analisis_indices
 
-        # 2. POOLS AMPLIADOS DE TICKERS PARA ACCIONES
-        dict_sp500 = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "BRK-B", "V", "MA", "JPM", "BAC", "PG", "KO", "NKE", "TGT", "WMT", "JNJ", "PFE", "UNH", "XOM", "CVX", "HD", "COST", "PEP", "PM"]
-        dict_nasdaq = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "AMD", "QCOM", "INTC", "TSM", "ASML", "NFLX", "ADBE", "PANW", "SNPS", "CDNS", "MAR", "ORCL", "TXN"]
-        dict_dowjones = ["AAPL", "MSFT", "AMZN", "V", "JPM", "AXP", "PG", "KO", "WMT", "HD", "CAT", "DIS", "CVX", "BA", "HON", "IBM", "MMM", "GS", "UNH", "VZ"]
-        dict_russell2000 = ["CRUS", "POWI", "SLAB", "NVMI", "ONTO", "FORM", "PDFS", "CEVA", "AEIS", "COHR", "UFPI", "AIT", "FIX", "AMN", "SPSC", "EGBN", "KNSL", "MEDP"]
-
+        # 2. CONFIGURACIÓN DEL POOL SELECCIONADO
         if "Espectro Completo" in enfoque_mercado:
-            pool_dinamico = list(set(dict_sp500 + dict_nasdaq + dict_dowjones + dict_russell2000))
+            pool_dinamico = pool_completo
         elif "S&P 500" in enfoque_mercado:
             pool_dinamico = dict_sp500
         elif "NASDAQ" in enfoque_mercado:
@@ -230,10 +232,7 @@ with tab2:
                     valor_intrinseco = eps * (8.5 + (2 * (crecimiento_ganancias * 100)))
                     descuento = ((valor_intrinseco - precio) / valor_intrinseco) * 100
                     
-                    # Filtro de margen de seguridad laxo para asegurar que SIEMPRE entren datos
                     if valor_intrinseco > precio and descuento >= margen_exigido:
-                        
-                        # --- LÓGICA DE HORIZONTE TEMPORAL DINÁMICA ULTRA SEGURA ---
                         max_52 = info.get('fiftyTwoWeekHigh') or precio
                         min_52 = info.get('fiftyTwoWeekLow') or precio
                         rango_total = max_52 - min_52
@@ -261,32 +260,60 @@ with tab2:
         st.session_state.total_analizadas = len(pool_dinamico)
         st.session_state.descartadas = descartadas_por_filtro
 
-    # --- RENDERIZADO SEGURO DE LAS TABLAS ---
+    # --- RENDERIZADO VISUAL DE LAS TABLAS MACRO ---
     if st.session_state.indices_radar:
         st.markdown("#### 🌍 Comportamiento de Índices Macroeconómicos del Mundo")
         st.dataframe(pd.DataFrame(st.session_state.indices_radar), use_container_width=True)
 
-    # Forzar que la tabla se dibuje si hay datos, o mostrar un aviso interactivo
     if st.session_state.resultados_radar and len(st.session_state.resultados_radar) > 0:
         st.markdown(f"📊 **Análisis de Acciones Seleccionadas:** Se evaluaron `{st.session_state.total_analizadas}` empresas. `{st.session_state.descartadas}` no pasaron tu filtro.")
         df_final = pd.DataFrame(st.session_state.resultados_radar)
         st.dataframe(df_final, use_container_width=True)
-        
-        # Panel de guardado persistente para la memoria
-        st.markdown("### 📥 Guardar en la Memoria del Agente")
-        col_sel, col_btn = st.columns([3, 1])
-        with col_sel:
-            ticker_guardar = st.selectbox("Selecciona la acción ganadora para archivar:", df_final["Ticker"].tolist(), key="sb_guardar_ticker")
-        with col_btn:
-            st.write("") 
-            if st.button("💾 Guardar Selección", key="btn_guardar_db"):
-                fila = df_final[df_final["Ticker"] == ticker_guardar].iloc[0]
-                guardar_accion_en_memoria(
-                    fila["Ticker"], fila["Empresa"], float(fila["Precio Actual"]), 
-                    float(fila["Valor Intrínseco"]), fila["Plazo Sugerido"], float(fila["Margen de Seguridad"])
-                )
     elif st.session_state.resultados_radar is not None:
-        st.warning(f"⚠️ El algoritmo funcionó, pero ninguna acción cumple con el {margen_exigido}% de margen de seguridad que seleccionaste. Baja el slider del Margen de Seguridad a 10% u 15% y vuelve a presionar el botón para forzar la salida de datos.")
+        st.warning(f"⚠️ El algoritmo funcionó, pero ninguna acción cumple con el {margen_exigido}% de margen de seguridad que seleccionaste. Baja el slider a 10% u 15% para ver el filtrado estricto.")
+
+    # --- BLOQUE PERSISTENTE DE MEMORIA (FUERA DE LAS CONDICIONES DE FILTRADO) ---
+    st.markdown("---")
+    st.markdown("### 📥 Panel General de Guardado en la Memoria del Agente")
+    st.write("Registra un ticker en la base de datos permanente local. Si el escaneo quedó vacío por condiciones de mercado, puedes escribir o seleccionar un ticker manualmente para forzar su estudio en la bitácora.")
+    
+    # Determinar qué lista de tickers mostrar en el menú desplegable de guardado
+    if st.session_state.resultados_radar and len(st.session_state.resultados_radar) > 0:
+        lista_desplegable_memoria = [f["Ticker"] for f in st.session_state.resultados_radar]
+    else:
+        lista_desplegable_memoria = pool_completo
+
+    col_sel, col_btn = st.columns([3, 1])
+    with col_sel:
+        ticker_guardar = st.selectbox("Selecciona la acción para archivar en la memoria local:", lista_desplegable_memoria, key="sb_guardar_ticker")
+    with col_btn:
+        st.write("") 
+        if st.button("💾 Guardar Selección en Memoria", key="btn_guardar_db"):
+            with st.spinner("Procesando y guardando activo..."):
+                try:
+                    t_obj = yf.Ticker(ticker_guardar)
+                    t_info = t_obj.info
+                    p_act = t_info.get('currentPrice') or t_info.get('regularMarketPrice', 100.0)
+                    eps_val = t_info.get('trailingEps', 1.0)
+                    n_corp = t_info.get('longName', ticker_guardar)
+                    c_gan = t_info.get('earningsGrowth', 0.05) or 0.05
+                    
+                    v_int_m = eps_val * (8.5 + (2 * (c_gan * 100)))
+                    m_seg_m = ((v_int_m - p_act) / v_int_m) * 100 if v_int_m > 0 else 0.0
+                    
+                    # Determinar plazo dinámico de respaldo rápido
+                    max_52_m = t_info.get('fiftyTwoWeekHigh') or p_act
+                    min_52_m = t_info.get('fiftyTwoWeekLow') or p_act
+                    r_tot_m = max_52_m - min_52_m
+                    pos_p_m = (p_act - min_52_m) / r_tot_m if r_tot_m > 0 else 0.5
+                    plazo_m = "⏳ Corto Plazo" if pos_p_m >= 0.75 else "📈 Largo Plazo"
+
+                    guardar_accion_en_memoria(
+                        ticker_guardar, n_corp, float(p_act), 
+                        float(v_int_m), plazo_m, float(m_seg_m)
+                    )
+                except Exception as e:
+                    st.error(f"No se pudieron extraer los fundamentales instantáneos para forzar el guardado de {ticker_guardar}: {e}")
 
 # =====================================================================
 # PESTAÑA 3: ROTACIÓN DE SECTORES & BITÁCORA DE APRENDIZAJE
