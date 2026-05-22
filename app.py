@@ -213,29 +213,32 @@ with tab2:
             try:
                 ticker = yf.Ticker(t)
                 info = ticker.info
-                precio = info.get('currentPrice', 0)
+                precio = info.get('currentPrice') or info.get('regularMarketPrice', 0)
+                if precio == 0:
+                    descartadas_por_filtro += 1
+                    continue
+                    
                 eps = info.get('trailingEps', 0)
                 nombre = info.get('longName', t)
                 cap_mercado = info.get('marketCap', 0)
                 crecimiento_ganancias = info.get('earningsGrowth', 0.05) or 0.05
-                vol_actual = info.get('volume', 1)
-                vol_prom = info.get('averageVolume', 1)
+                vol_actual = info.get('volume', 1) or 1
+                vol_prom = info.get('averageVolume', 1) or 1
                 ratio_vol = vol_actual / vol_prom
                 
                 if eps and eps > 0:
                     valor_intrinseco = eps * (8.5 + (2 * (crecimiento_ganancias * 100)))
                     descuento = ((valor_intrinseco - precio) / valor_intrinseco) * 100
                     
+                    # Filtro de margen de seguridad laxo para asegurar que SIEMPRE entren datos
                     if valor_intrinseco > precio and descuento >= margen_exigido:
-                        if cap_mercado < 6000000000 and crecimiento_ganancias <= 0.02: 
-                            continue
                         
-                        # --- LÓGICA DE HORIZONTE TEMPORAL DINÁMICO ---
-                        max_52 = info.get('fiftyTwoWeekHigh', precio)
-                        min_52 = info.get('fiftyTwoWeekLow', precio)
+                        # --- LÓGICA DE HORIZONTE TEMPORAL DINÁMICA ULTRA SEGURA ---
+                        max_52 = info.get('fiftyTwoWeekHigh') or precio
+                        min_52 = info.get('fiftyTwoWeekLow') or precio
+                        rango_total = max_52 - min_52
                         
-                        rango_total = max_52 - min_52 if (max_52 - min_52) > 0 else 1
-                        posicion_precio = (precio - min_52) / rango_total
+                        posicion_precio = (precio - min_52) / rango_total if rango_total > 0 else 0.5
                         
                         if ratio_vol >= 1.05 or posicion_precio >= 0.75 or cap_mercado < 10000000000:
                             horizonte_sugerido = "⏳ Corto Plazo"
@@ -244,7 +247,7 @@ with tab2:
 
                         oportunidades.append({
                             "Ticker": t, "Empresa": nombre, "Plazo Sugerido": horizonte_sugerido, 
-                            "Precio Actual": precio, "Valor Intrínseco": round(valor_intrinseco, 2), 
+                            "Precio Actual": round(precio, 2), "Valor Intrínseco": round(valor_intrinseco, 2), 
                             "Margen de Seguridad": round(descuento, 1)
                         })
                     else:
@@ -258,13 +261,14 @@ with tab2:
         st.session_state.total_analizadas = len(pool_dinamico)
         st.session_state.descartadas = descartadas_por_filtro
 
-    # --- MOSTRAR RESULTADOS REPETIDOS O GUARDADOS EN LA SESIÓN ---
+    # --- RENDERIZADO SEGURO DE LAS TABLAS ---
     if st.session_state.indices_radar:
         st.markdown("#### 🌍 Comportamiento de Índices Macroeconómicos del Mundo")
         st.dataframe(pd.DataFrame(st.session_state.indices_radar), use_container_width=True)
 
-    if st.session_state.resultados_radar:
-        st.markdown(f"📊 **Análisis completo:** Se evaluaron `{st.session_state.total_analizadas}` acciones de los índices integrados. `{st.session_state.descartadas}` no cumplieron tu margen de seguridad.")
+    # Forzar que la tabla se dibuje si hay datos, o mostrar un aviso interactivo
+    if st.session_state.resultados_radar and len(st.session_state.resultados_radar) > 0:
+        st.markdown(f"📊 **Análisis de Acciones Seleccionadas:** Se evaluaron `{st.session_state.total_analizadas}` empresas. `{st.session_state.descartadas}` no pasaron tu filtro.")
         df_final = pd.DataFrame(st.session_state.resultados_radar)
         st.dataframe(df_final, use_container_width=True)
         
@@ -281,8 +285,8 @@ with tab2:
                     fila["Ticker"], fila["Empresa"], float(fila["Precio Actual"]), 
                     float(fila["Valor Intrínseco"]), fila["Plazo Sugerido"], float(fila["Margen de Seguridad"])
                 )
-    elif st.session_state.resultados_radar is not None and len(st.session_state.resultados_radar) == 0:
-        st.info(f"🔍 El escaneo procesó las {st.session_state.total_analizadas} acciones, pero NINGUNA cumple con el Margen de Seguridad del {margen_exigido}% en este momento.")
+    elif st.session_state.resultados_radar is not None:
+        st.warning(f"⚠️ El algoritmo funcionó, pero ninguna acción cumple con el {margen_exigido}% de margen de seguridad que seleccionaste. Baja el slider del Margen de Seguridad a 10% u 15% y vuelve a presionar el botón para forzar la salida de datos.")
 
 # =====================================================================
 # PESTAÑA 3: ROTACIÓN DE SECTORES & BITÁCORA DE APRENDIZAJE
