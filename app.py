@@ -96,7 +96,6 @@ with tab1:
     st.write("Presiona el botón de abajo para detectar en qué sector exacto e índice se inyectó el mayor flujo de capital masivo ayer, y aislar las 5 acciones ganadoras.")
 
     if st.button("🚀 Rastrear Inyección de Capital de Ayer", key="btn_flujos_avanzados_antierror"):
-        # Diccionario de ETFs institucionales que representan cada mercado/sector
         etfs_sectores = {
             "Tecnología (XLK)": "XLK",
             "Semiconductores (SMH)": "SMH",
@@ -122,7 +121,6 @@ with tab1:
                     vol_ayer = inf_etf.get('volume', 1) or 1
                     vol_promedio = inf_etf.get('averageVolume', 1) or 1
                     
-                    # El ratio nos dice cuántas veces se multiplicó el dinero ayer respecto a lo normal
                     multiplicador_dinero = vol_ayer / vol_promedio
                     
                     analisis_etfs.append({
@@ -136,7 +134,6 @@ with tab1:
         
         if analisis_etfs:
             df_etfs = pd.DataFrame(analisis_etfs)
-            # El ganador es el que tenga el multiplicador de volumen más alto
             ganador_mercado = df_etfs.sort_values(by="Inyección de Capital", ascending=False).iloc[0]
             
             st.markdown("#### 🏆 Ganador de la Jornada Anterior")
@@ -175,13 +172,13 @@ with tab1:
             if analisis_acciones:
                 df_acciones_ordenadas = pd.DataFrame(analisis_acciones).sort_values(by="Fuerza de Entrada (Dinero)", ascending=False).head(5)
                 
-                # Formatear visualmente para el usuario
                 for _, fila in df_acciones_ordenadas.iterrows():
-                    # Usamos mensajes dinámicos basados en la intensidad de entrada de dinero
-                    if fila['Fuerza de Entrada (Dinero)'] >= 1.5:
+                    fuerza_dinero = fila['Fuerza de Entrada (Dinero)']
+                    
+                    if fuerza_dinero >= 1.5:
                         alerta_visual = "🚀 INYECCIÓN CRÍTICA DE CAPITAL"
                         color_caja = st.success
-                    elif fila['Fuerza de Entrada (Dinero)'] >= 1.2:
+                    elif fuerza_dinero >= 1.2:
                         alerta_visual = "🐳 MOVIMIENTO INSTITUCIONAL DETECTADO"
                         color_caja = st.info
                     else:
@@ -189,7 +186,7 @@ with tab1:
                         color_caja = st.warning
                         
                     color_caja(f"**{fila['Empresa']} ({fila['Código']})** — Sector: *{fila['Sector']}*\n\n"
-                               f"• **Fuerza del Dinero:** El volumen de transacciones se multiplicó por **{fila['Fuerza de Entrada (Dinero']:.2f}x** comparado con su media.\n"
+                               f"• **Fuerza del Dinero:** El volumen de transacciones se multiplicó por **{fuerza_dinero:.2f}x** comparado con su media.\n"
                                f"• **Precio por Acción:** ${fila['Precio de Cierre']:.2f} USD\n\n"
                                f"📍 *Estado de Flujo:* **{alerta_visual}**")
             else:
@@ -197,7 +194,7 @@ with tab1:
         else:
             st.error("Error al conectar con los servidores de datos de flujo.")
 
-# (Pestañas 2, 3 y 4 se mantienen exactamente iguales a tu versión anterior)
+# Mantenemos el resto de pestañas sin modificaciones
 with tab2: st.subheader("🎓 Filtros Estratégicos")
 with tab3: st.subheader("🛰️ Escáner Automático de Índices Bursátiles")
 with tab4: st.subheader("🔎 Buscador Individual con Protección Antierror")
