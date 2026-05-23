@@ -109,36 +109,63 @@ cfg_margen, cfg_volumen = cursor.fetchone()
 conn.close()
 
 # =====================================================================
-# 2. UNIVERSO DE ACTIVOS (POOL DE ALTA LIQUIDEZ Y ETFS MATRIZ)
+# 2. UNIVERSO DE ACTIVOS AMBICIOSO (ROTACIÓN GLOBAL MULTI-ACTIVO)
 # =====================================================================
 POOL_ACCIONES = [
-    "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "JPM", "XOM", "LLY", "AVGO", 
-    "TSLA", "COST", "WMT", "BRK-B", "PG", "CCJ", "OKLO", "NU", "SQ", "AMD"
+    # ---- MAGNÍFICAS DE IA & BIG TECH ----
+    "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "AVGO", "AMD", "TSLA",
+    
+    # ---- VALOR, VALORACIÓN CUANT & CONSUMO SÓLIDO ----
+    "BRK-B", "COST", "WMT", "PG", "JPM", "LLY",
+    
+    # ---- ENERGÍA DEL FUTURO, URANIO & TECH DISRUPTIVA ----
+    "CCJ",       # Cameco (Líder en Uranio)
+    "OKLO",      # Energía nuclear limpia respaldada por Sam Altman
+    "SMR",       # NuScale Power (Reactores modulares para Data Centers)
+    "HBAR-USD",  # Red Hedera con sufijo correcto para evitar fallas en la API
+    
+    # ---- FINTECH & BANCA DIGITAL ----
+    "NU",        # Nu Holdings (Nubank - Crecimiento explosivo en LatAm)
+    "SQ"         # Block (Sistemas de pago y ecosistema Bitcoin)
 ]
 
 ETFS_ROTACION = {
+    # ---- RENTA VARIABLE GLOBAL ----
     "Líder de Mercado (S&P 500)": "SPY",
     "Tecnología e IA (NASDAQ 100)": "QQQ",
-    "Semiconductores Globales (SMH)": "SMH",
-    "Energía Nuclear y Uranio (URNM)": "URNM",
-    "Sector Financiero y Banca (XLF)": "XLF",
-    "Bienes de Consumo Discrecional (XLY)": "XLY",
-    "Cuidado de la Salud e Innovación (XLV)": "XLV",
-    "Sector Refugio: Consumo Defensivo (XLP)": "XLP",
-    "Sector Refugio: Energía Fósil (XLE)": "XLE"
+    "Semiconductores Globales": "SMH",
+    "Bienes de Consumo Discrecional": "XLY",
+    
+    # ---- REFUGIOS TRADICIONALES Y DEFENSIVOS ----
+    "Consumo Masivo / Defensivo": "XLP",
+    "Cuidado de la Salud e Innovación": "XLV",
+    "Sector Financiero y Grandes Bancos": "XLF",
+    
+    # ---- REVOLUCIÓN ENERGÉTICA MULTI-FUENTE ----
+    "Energía Nuclear y Uranio": "URNM",
+    "Energía Fósil y Petróleo (Manos Fuertes)": "XLE",
+    
+    # ---- MATERIAS PRIMAS, BONOS Y ACTIVOS ALTERNATIVOS ----
+    "Metales Preciosos (Oro - Refugio Máximo)": "GLD",
+    "Commodities de Energía / Petróleo Crudo": "USO",
+    "Bonos del Tesoro EE.UU. (Protección de Capital 20+ Años)": "TLT",
+    "Criptoactivos / Adopción Institucional (Bitcoin ETF)": "IBIT"
 }
 
-# MAPEO DE COMPONENTES DE ALTA CONCENTRACIÓN INSTITUCIONAL
 COMPONENTES_ETFS = {
     "SPY": ["AAPL", "MSFT", "AMZN", "META", "BRK-B"],
     "QQQ": ["AAPL", "MSFT", "NVDA", "AVGO", "META"],
     "SMH": ["NVDA", "AVGO", "AMD", "TSM", "INTC"],
-    "URNM": ["CCJ", "UUUU", "NXE", "SMR", "DNN"],
-    "XLF": ["JPM", "BRK-B", "GS", "MS", "BAC"],
     "XLY": ["AMZN", "TSLA", "HD", "NKE", "MCD"],
-    "XLV": ["LLY", "UNH", "JNJ", "MRK", "ABV"],
     "XLP": ["PG", "COST", "WMT", "KO", "PEP"],
-    "XLE": ["XOM", "CVX", "COP", "EOG", "SLB"]
+    "XLV": ["LLY", "UNH", "JNJ", "MRK", "ABV"],
+    "XLF": ["JPM", "BRK-B", "GS", "MS", "BAC"],
+    "URNM": ["CCJ", "UUUU", "NXE", "SMR", "DNN"],
+    "XLE": ["XOM", "CVX", "COP", "EOG", "SLB"],
+    "GLD": ["GLD", "IAU", "NEM", "GOLD", "AEM"],
+    "USO": ["XOM", "CVX", "BP", "SHEL", "TTE"],
+    "TLT": ["TLT", "IEI", "SHY", "IEF", "BIL"],
+    "IBIT": ["IBIT", "FBTC", "MSTR", "COIN", "SQ"]
 }
 
 # =====================================================================
@@ -167,10 +194,12 @@ st.title("🤖 Agente IA Cuantitativo desde Cero")
 st.markdown("### Escáner Ultra-Veloz Anti-Bloqueos de Rotación de Flujos, Valoración Cuant y Gestión Táctica")
 st.markdown("---")
 
-tab1, tab2, tab3 = st.tabs([
+# DECLARACIÓN INTEGRADA DE LAS CUATRO PESTAÑAS NATIVAS
+tab1, tab2, tab3, tab4 = st.tabs([
     "🛰️ PESTAÑA 1: Rotación de Capital y Flujo Institucional",
     "🧱 PESTAÑA 2: Radar de Descuento Cuantitativo (Largo Plazo)",
-    "🎯 PESTAÑA 3: Impulso Táctico y Control de Riesgos (Corto Plazo)"
+    "🎯 PESTAÑA 3: Impulso Táctico y Control de Riesgos (Corto Plazo)",
+    "🔍 PESTAÑA 4: Consultor de Activos Libre & Diagnóstico IA"
 ])
 
 # =====================================================================
@@ -178,7 +207,7 @@ tab1, tab2, tab3 = st.tabs([
 # =====================================================================
 with tab1:
     st.subheader("📡 Matriz de Rotación Macroeconómica Global")
-    st.write("Detecta a qué industrias está migrando el dinero de las instituciones financieras.")
+    st.write("Detecta a qué industrias y refugios globales está migrando el dinero de las instituciones financieras.")
 
     if st.button("🔍 Escanear Migración de Capital Global", key="btn_p1_macro"):
         analisis_macro = []
@@ -191,7 +220,11 @@ with tab1:
                 if len(hist) >= 2:
                     var_diaria = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-2]) / hist['Close'].iloc[-2]) * 100
                     vol_relativo = hist['Volume'].iloc[-1] / hist['Volume'].mean()
-                    tipo_entorno = "CRECIMIENTO / RIESGO" if ticker in ["SPY", "QQQ", "SMH", "URNM", "XLY"] else "REFUGIO / DEFENSA"
+                    
+                    if ticker in ["SPY", "QQQ", "SMH", "XLY", "URNM", "IBIT"]:
+                        tipo_entorno = "CRECIMIENTO / RIESGO"
+                    else:
+                        tipo_entorno = "REFUGIO / DEFENSA"
                     
                     analisis_macro.append({
                         "Industria / Sector": nombre,
@@ -252,7 +285,7 @@ with tab1:
 # =====================================================================
 with tab2:
     st.subheader("🧱 Modelado Estadístico de Valor Intrínseco")
-    st.write("Calcula desviaciones de descuento y márgenes de seguridad utilizando el comportamiento histórico del precio.")
+    st.write("Calcula desviaciones de descuento y márgenes de seguridad utilizando el comportamiento histórico del precio para el pool de activos.")
 
     if st.button("⚡ Ejecutar Escáner de Valor Inteligente", key="btn_p2_valor"):
         resultados_val = []
@@ -265,7 +298,7 @@ with tab2:
                 if hist.empty: continue
                 
                 p_actual = hist['Close'].iloc[-1]
-                # Análisis Cuantitativo: Determinación del suelo histórico institucional (Percentil 15 de los últimos 60 días)
+                # Análisis Cuantitativo: Suelo institucional (Percentil 15)
                 suelo_cuant = np.percentile(hist['Low'], 15)
                 # Estimación del objetivo por regresión de valor intrínseco matemático
                 valor_real_ia = np.percentile(hist['High'], 85) * 1.12
@@ -309,7 +342,7 @@ with tab2:
 # =====================================================================
 with tab3:
     st.subheader("🎯 Planificación de Operaciones Matemáticas de Corto Plazo")
-    st.write("Filtra activos con momentum alcista inmediato y genera un plan exacto de gestión de posición.")
+    st.write("Filtra activos con momentum alcista inmediato dentro del pool y genera un plan exacto de gestión de posición.")
     
     col_c1, col_c2 = st.columns(2)
     with col_c1:
@@ -332,15 +365,14 @@ with tab3:
                 precio_hoy = hist['Close'].iloc[-1]
                 vol_rel = hist['Volume'].iloc[-1] / hist['Volume'].mean()
                 
-                # Cálculo cuantitativo del ATR (Average True Range) para Stop Loss técnico
+                # Cálculo cuantitativo del ATR para Stop Loss técnico
                 atr = (hist['High'] - hist['Low']).rolling(10).mean().iloc[-1]
                 if atr <= 0: atr = precio_hoy * 0.03
                 
-                # Cálculo rápido de EMA Corta para medir momentum de aceleración
+                # EMA Corta para medir momentum de aceleración
                 hist['EMA_Corta'] = hist['Close'].ewm(span=5, adjust=False).mean()
                 ema_c = hist['EMA_Corta'].iloc[-1]
                 
-                # Fórmula de puntuación propietaria del Agente Quant
                 score_momentum = (vol_rel * 40) + ((precio_hoy / diag_ema if (diag_ema := max(ema_c, 0.01)) else 1) * 60)
                 
                 analisis_tactico.append({
@@ -368,14 +400,12 @@ with tab3:
                 atr_f = fila['ATR']
                 vol_f = fila['Volumen Relativo']
                 
-                # Reglas de salida automatizadas por volatilidad (ATR)
                 sl_tecnico = p_ent - (1.3 * atr_f)
                 tp_tecnico = p_ent + (2.6 * atr_f)
                 
                 porc_sl = ((p_ent - sl_tecnico) / p_ent) * 100
                 porc_tp = ((tp_tecnico - p_ent) / p_ent) * 100
                 
-                # Modelo de Gestión Antierror Monetario
                 monto_en_riesgo = capital_liquido * (riesgo_permitido / 100)
                 perdida_por_accion = p_ent - sl_tecnico
                 cantidad_acciones = int(monto_en_riesgo / perdida_por_accion) if perdida_por_accion > 0 else 1
@@ -407,3 +437,81 @@ with tab3:
             conn.close()
         else:
             st.error("No se encontraron activos que superen el umbral de aceleración mínimo en esta sesión.")
+
+# =====================================================================
+# PESTAÑA 4: CONSULTOR INDEPENDIENTE DE ACTIVOS GLOBAL (CUALQUIER TICKER)
+# =====================================================================
+with tab4:
+    st.subheader("🕵️‍♂️ Consultor Quant Libre")
+    st.write("Escribe cualquier ticker del mercado global para evaluar su valor intrínseco estadístico, volatilidad y viabilidad de inversión de forma aislada.")
+
+    # Cuadro de entrada libre de texto
+    ticker_libre = st.text_input("Introduce el símbolo del activo (Ej: WDC, GOOGL, AAPL, ADE, HBAR-USD):", value="WDC").strip().upper()
+
+    if st.button("📊 Analizar Activo Individual", key="btn_p4_analisis_libre"):
+        if ticker_libre:
+            with st.spinner(f"Estableciendo conexión segura para analizar {ticker_libre}..."):
+                try:
+                    asset = yf.Ticker(ticker_libre)
+                    h_libre = asset.history(period="60d")
+                    
+                    if not h_libre.empty:
+                        p_libre_actual = h_libre['Close'].iloc[-1]
+                        
+                        # Cálculos algorítmicos cuantitativos inmunes a bloqueos
+                        suelo_institucional = np.percentile(h_libre['Low'], 15)
+                        techo_historico = np.percentile(h_libre['High'], 85)
+                        valor_intrinseco_libre = techo_historico * 1.12
+                        
+                        atr_libre = (h_libre['High'] - h_libre['Low']).rolling(10).mean().iloc[-1]
+                        if atr_libre <= 0: atr_libre = p_libre_actual * 0.03
+                        
+                        if valor_intrinseco_libre > p_libre_actual:
+                            margen_libre = ((valor_intrinseco_libre - p_libre_actual) / valor_intrinseco_libre) * 100
+                            potencial_libre = ((valor_intrinseco_libre - p_libre_actual) / p_libre_actual) * 100
+                        else:
+                            margen_libre = 0.0
+                            potencial_libre = 0.0
+                            
+                        cumple_margen = margen_libre >= cfg_margen
+                        
+                        vol_hoy_libre = h_libre['Volume'].iloc[-1]
+                        vol_prom_libre = h_libre['Volume'].mean()
+                        fuerza_vol_libre = vol_hoy_libre / vol_prom_libre if vol_prom_libre > 0 else 1.0
+                        cumple_volumen = fuerza_vol_libre >= cfg_volumen
+                        
+                        # --- INTERFAZ DE RENDIMIENTO DEL ACTIVO ---
+                        st.markdown(f"## 📊 Diagnóstico Quant: {ticker_libre}")
+                        st.markdown(f"**Precio de Mercado Actual:** ${p_libre_actual:,.2f} USD")
+                        st.markdown("---")
+                        
+                        col_p4_1, col_p4_2, col_p4_3 = st.columns(3)
+                        with col_p4_1:
+                            st.metric("🧱 Valor Intrínseco Estructurado:", f"${valor_intrinseco_libre:,.2f} USD")
+                            st.caption("Calculado por desviación alcista institucional.")
+                        with col_p4_2:
+                            st.metric("📉 Suelo de Acumulación Cuant:", f"${suelo_institucional:,.2f} USD")
+                            st.caption("Percentil 15 histórico (Zona de soporte fuerte).")
+                        with col_p4_3:
+                            st.metric("🛡️ Margen de Seguridad Real:", f"{margen_libre:.1f}%", f"Potencial: +{potencial_libre:.1f}%")
+                            st.caption(f"Umbral mínimo exigido por la IA: {cfg_margen:.1f}%")
+                            
+                        st.markdown("---")
+                        st.markdown("### 🚦 Evaluación de Requisitos Estrictos de Inversión")
+                        
+                        if cumple_margen and cumple_volumen:
+                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) y cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
+                        elif cumple_margen and not cumple_volumen:
+                            st.warning(f"🟡 **ACTIVO EN LISTA DE ESPERA (FALTA FLUJO):** El precio es excelente y tiene un gran descuento ({margen_libre:.1f}%), pero el volumen institucional está apagado (**{fuerza_vol_libre:.2f}x**). Monitorear inyección de capital antes de entrar.")
+                        else:
+                            st.error(f"🔴 **ACTIVO RECHAZADO:** {ticker_libre} no cumple con los requisitos del algoritmo. Su margen de descuento ({margen_libre:.1f}%) está por debajo del **{cfg_margen:.1f}%** exigido por las directrices de riesgo actuales del agente.")
+                            
+                        sl_sugerido = p_libre_actual - (1.3 * atr_libre)
+                        tp_sugerido = p_libre_actual + (2.6 * atr_libre)
+                        st.info(f"💡 **Parámetros de Gestión Táctica (Si decides operar):** Stop Loss sugerido por volatilidad: **${sl_sugerido:,.2f} USD** (-{((p_libre_actual-sl_sugerido)/p_libre_actual)*100:.1f}%) | Take Profit Técnico: **${tp_sugerido:,.2f} USD** (+{((tp_sugerido-p_libre_actual)/p_libre_actual)*100:.1f}%).")
+                    else:
+                        st.error(f"No se encontraron datos de mercado para el símbolo '{ticker_libre}'. Verifica si está bien escrito o si requiere sufijo cambiario.")
+                except Exception as e:
+                    st.error(f"Error crítico al procesar el activo: {str(e)}")
+        else:
+            st.warning("Por favor, introduce un ticker válido antes de ejecutar el escáner.")
