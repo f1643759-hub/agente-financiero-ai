@@ -194,12 +194,13 @@ st.title("🤖 Agente IA Cuantitativo desde Cero")
 st.markdown("### Escáner Ultra-Veloz Anti-Bloqueos de Rotación de Flujos, Valoración Cuant y Gestión Táctica")
 st.markdown("---")
 
-# DECLARACIÓN INTEGRADA DE LAS CUATRO PESTAÑAS NATIVAS
-tab1, tab2, tab3, tab4 = st.tabs([
+# DECLARACIÓN INTEGRADA DE LAS CINCO PESTAÑAS (AÑADIDA TAB5)
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🛰️ PESTAÑA 1: Rotación de Capital y Flujo Institucional",
     "🧱 PESTAÑA 2: Radar de Descuento Cuantitativo (Largo Plazo)",
     "🎯 PESTAÑA 3: Impulso Táctico y Control de Riesgos (Corto Plazo)",
-    "🔍 PESTAÑA 4: Consultor de Activos Libre & Diagnóstico IA"
+    "🔍 PESTAÑA 4: Consultor de Activos Libre & Diagnóstico IA",
+    "🛡️ PESTAÑA 5: Minimización Matemática de Riesgo"
 ])
 
 # =====================================================================
@@ -515,3 +516,129 @@ with tab4:
                     st.error(f"Error crítico al procesar el activo: {str(e)}")
         else:
             st.warning("Por favor, introduce un ticker válido antes de ejecutar el escáner.")
+
+# =====================================================================
+# PESTAÑA 5: MINIMIZACIÓN MATEMÁTICA DE RIESGO SECTORIAL (INTEGRACIÓN COMPLETA)
+# =====================================================================
+with tab5:
+    st.subheader("🛡️ Optimización Avanzada de Mínima Varianza y Criterio de Riesgo")
+    st.write("Esta pestaña localiza automáticamente el sector líder por flujos de dinero y estructura un portafolio blindado de 3 acciones minimizando el riesgo matemático.")
+    
+    presupuesto_total = st.number_input("Capital total para este portafolio blindado (USD):", min_value=100.0, value=3000.0, step=100.0, key="p5_presupuesto")
+    
+    if st.button("🛡️ Ejecutar Optimización de Mínimo Riesgo", key="btn_p5_ejecutar"):
+        st.write("📡 Escaneando mercados globales para aislar el sector dominante...")
+        
+        sector_lider = None
+        max_vol_macro = -1
+        
+        # Escaneo dinámico del sector líder por volumen relativo
+        for nombre, tick in ETFS_ROTACION.items():
+            try:
+                m_tk = yf.Ticker(tick)
+                m_h = m_tk.history(period="5d")
+                if len(m_h) >= 2:
+                    v_rel = m_h['Volume'].iloc[-1] / m_h['Volume'].mean()
+                    if v_rel > max_vol_macro:
+                        max_vol_macro = v_rel
+                        sector_lider = tick
+            except:
+                pass
+                
+        if sector_lider and sector_lider in COMPONENTES_ETFS:
+            componentes = COMPONENTES_ETFS[sector_lider]
+            st.info(f"🎯 Sector bajo análisis de riesgo: `{sector_lider}`. Componentes detectados: {componentes}")
+            
+            datos_riesgo = []
+            barra_p5 = st.progress(0)
+            
+            for index, ticker in enumerate(componentes):
+                try:
+                    tk = yf.Ticker(ticker)
+                    hist = tk.history(period="60d")
+                    
+                    if len(hist) >= 20:
+                        # Cálculo de Volatilidad Diaria Real (Desviación Estándar de retornos porcentuales)
+                        retornos = hist['Close'].pct_change().dropna()
+                        volatilidad_real = retornos.std()
+                        precio_act = hist['Close'].iloc[-1]
+                        
+                        # Cálculo del ATR de 14 períodos para Stop Loss matemático regular
+                        high_low = hist['High'] - hist['Low']
+                        high_close = np.abs(hist['High'] - hist['Close'].shift())
+                        low_close = np.abs(hist['Low'] - hist['Close'].shift())
+                        ranges = pd.concat([high_low, high_close, low_close], axis=1)
+                        true_range = ranges.max(axis=1)
+                        atr = true_range.rolling(14).mean().iloc[-1]
+                        
+                        datos_riesgo.append({
+                            "Ticker": ticker,
+                            "Precio": precio_act,
+                            "Volatilidad": volatilidad_real,
+                            "ATR": atr if atr > 0 else (precio_act * 0.03)
+                        })
+                except:
+                    pass
+                barra_p5.progress((index + 1) / len(componentes))
+                
+            if len(datos_riesgo) >= 3:
+                # Seleccionamos las 3 acciones con MENOR volatilidad estadística (Minimizando riesgo)
+                df_riesgo = pd.DataFrame(datos_riesgo).sort_values(by="Volatilidad", ascending=True).head(3)
+                
+                # Asignación de Capital Inteligente: Varianza Inversa (Más capital a la menos volátil)
+                df_riesgo['Inversa_Vol'] = 1.0 / df_riesgo['Volatilidad']
+                suma_inversas = df_riesgo['Inversa_Vol'].sum()
+                df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / suma_inversas
+                
+                st.markdown("## 📊 Portafolio de Mínimo Riesgo Sectorial Construído")
+                st.markdown("La IA ha calculado la distribución ideal de capital para minimizar el impacto de caídas bruscas de precio:")
+                st.markdown("---")
+                
+                conn = sqlite3.connect('agente_quant.db')
+                cursor = conn.cursor()
+                
+                for rank, (_, fila) in enumerate(df_riesgo.iterrows(), 1):
+                    tk_r = fila['Ticker']
+                    p_r = fila['Precio']
+                    vol_r = fila['Volatilidad']
+                    atr_r = fila['ATR']
+                    peso = fila['Ponderación']
+                    
+                    # Dinero exacto asignado a esta acción por ponderación de riesgo
+                    dinero_asignado = presupuesto_total * peso
+                    cantidad_acc = int(dinero_asignado // p_r)
+                    if cantidad_acc <= 0: cantidad_acc = 1
+                    costo_total = cantidad_acc * p_r
+                    
+                    # Stop Loss matemático: 2 veces el ATR para darle espacio institucional óptimo
+                    sl_matematico = p_r - (2.0 * atr_r)
+                    tp_matematico = p_r + (4.0 * atr_r) # Ratio Riesgo/Beneficio 1:2
+                    
+                    try:
+                        cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
+                                       (datetime.now().strftime("%Y-%m-%d"), tk_r, p_r, sl_matematico, tp_matematico))
+                    except:
+                        pass
+                        
+                    st.success(f"### 🛡️ ACTIVO SEGURO {rank}: {tk_r} (Peso en Portafolio: {peso*100:.1f}%)")
+                    
+                    col_p5_1, col_p5_2, col_p5_3 = st.columns(3)
+                    with col_p5_1:
+                        st.metric("💵 Precio de Entrada:", f"${p_r:.2f} USD")
+                        st.caption(f"Asignación de Capital: ${dinero_asignado:,.2f} USD")
+                    with col_p5_2:
+                        st.metric("📉 Volatilidad Diaria:", f"{vol_r*100:.2f}%", "Riesgo Mitigado")
+                        st.caption(f"Cantidad a Comprar: {cantidad_acc} acciones")
+                    with col_p5_3:
+                        st.metric("🛡️ Límite Stop Loss (2x ATR):", f"${sl_matematico:.2f} USD")
+                        st.caption(f"Take Profit Estratégico: ${tp_matematico:.2f} USD")
+                        
+                    st.markdown(f"📦 **Órden Ejecutiva:** Comprar **{cantidad_acc} unidades** de `{tk_r}` a un costo real neto de **${costo_total:,.2f} USD**.")
+                    st.markdown("---")
+                    
+                conn.commit()
+                conn.close()
+            else:
+                st.warning("No se encontraron suficientes acciones estables en este sector para estructurar el portafolio de 3 activos.")
+        else:
+            st.error("No se pudo mapear la rotación macro del mercado. Verifica la conexión.")
