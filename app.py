@@ -249,7 +249,7 @@ with tab1:
         if analisis_macro:
             df_macro = pd.DataFrame(analisis_macro).sort_values(by="Volumen Relativo", ascending=False)
             df_m_vista = df_macro.copy()
-            df_m_vista["Variación Diaria"] = df_m_vista["Variación Daily"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
+            df_m_vista["Variación Diaria"] = df_m_vista["Variación Diaria"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
             df_m_vista["Volumen Relativo"] = df_m_vista["Volumen Relativo"].map(lambda x: f"{x:.2f}x volumen regular")
             st.dataframe(df_m_vista, use_container_width=True, hide_index=True)
             
@@ -509,7 +509,7 @@ with tab4:
                         st.markdown("### 🚦 Evaluación de Requisitos Estrictos de Inversión")
                         
                         if cumple_margen and cumple_volumen:
-                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) y cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
+                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) and cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
                         elif cumple_margen and not cumple_volumen:
                             st.warning(f"🟡 **ACTIVO EN LISTA DE ESPERA (FALTA FLUJO):** El precio es excelente y tiene un gran descuento ({margen_libre:.1f}%), pero el volumen institucional está apagado (**{fuerza_vol_libre:.2f}x**). Monitorear inyección de capital antes de entrar.")
                         else:
@@ -645,7 +645,6 @@ with tab5:
         # =====================================================================
         # 2. SECCIÓN PREVIA DE CÁLCULO MATEMÁTICO DE PORTAFOLIO (INTACTA)
         # =====================================================================
-        # Se ejecuta basándose exclusivamente en el sector ganador general por volumen (parámetro max_vol_macro original)
         sector_lider_general = None
         max_vol_general = -1
         presion_lider_general = "DESCONOCIDO"
