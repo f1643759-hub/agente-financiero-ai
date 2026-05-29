@@ -197,7 +197,7 @@ st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🛰️ PESTAÑA 1: Rotación de Capital y Flujo Institucional",
     "🧱 PESTAÑA 2: Radar de Descuento Cuantitativo (Largo Plazo)",
-    "🎯 PESTAÑA 3: Impulso Táctico y Control de Riesgos (Corto Plazo)",
+    "🎯 PESTAÑA 3: Small Caps Growth (Filtros Buffett & Lynch)",
     "🔍 PESTAÑA 4: Consultor de Activos Libre & Diagnóstico IA",
     "🛡️ PESTAÑA 5: Minimización Matemática de Riesgo"
 ])
@@ -353,102 +353,142 @@ with tab2:
             st.error("No se pudieron extraer métricas cuantitativas en esta sesión.")
 
 # =====================================================================
-# PESTAÑA 3: IMPULSO ALCISTA TÁCTICO Y CONTROL DE RIESGOS ANTIERROR
+# PESTAÑA 3: RENOVADA - ESCÁNER DE SMALL CAPS CON FILTROS BUFFETT & LYNCH
 # =====================================================================
 with tab3:
-    st.subheader("🎯 Planificación de Operaciones Matemáticas de Corto Plazo")
-    st.write("Filtra activos con momentum alcista inmediato dentro del pool y genera un plan exacto de gestión de posición.")
+    st.subheader("🛰️ Escáner Inteligente de Small Caps Growth e Inyección de Flujo")
+    st.write("Analiza activos dinámicos de pequeña capitalización y alta disrupción para aislar flujos de inyección institucionales bajo los estrictos axiomas de Warren Buffett y Peter Lynch.")
     
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        capital_liquido = st.number_input("Capital líquido en cuenta (USD):", min_value=10.0, value=2000.0, step=100.0, key="p3_cap_liq")
-    with col_c2:
-        riesgo_permitido = st.slider("Riesgo máximo por operación (% de la cuenta):", 0.5, 5.0, 1.0, 0.5, key="p3_slider_r")
-        
-    st.markdown("---")
+    # Pool exclusivo de Small Caps / Activos disruptivos de crecimiento acelerado
+    POOL_SMALL_CAPS = ["OKLO", "SMR", "NU", "SQ", "CCJ"]
     
-    if st.button("🚀 Calcular Top 5 Táctico con Gestión Inflexible", key="btn_p3_corto"):
-        analisis_tactico = []
-        barra_p3 = st.progress(0)
+    if st.button("🔍 Escanear Universo Small Caps Growth", key="btn_p3_smallcaps"):
+        analisis_sc = []
+        barra_sc = st.progress(0)
         
-        for idx, ticker in enumerate(POOL_ACCIONES):
+        for idx, ticker in enumerate(POOL_SMALL_CAPS):
             try:
                 tk = yf.Ticker(ticker)
-                hist = tk.history(period="30d")
-                if len(hist) < 15: continue
+                hist = tk.history(period="60d")
+                if len(hist) < 20: continue
                 
-                precio_hoy = hist['Close'].iloc[-1]
-                vol_rel = hist['Volume'].iloc[-1] / hist['Volume'].mean()
+                precio_act = hist['Close'].iloc[-1]
+                vol_hoy = hist['Volume'].iloc[-1]
+                vol_prom = hist['Volume'].mean()
+                fuerza_vol = vol_hoy / vol_prom if vol_prom > 0 else 1.0
                 
-                atr = (hist['High'] - hist['Low']).rolling(10).mean().iloc[-1]
-                if atr <= 0: atr = precio_hoy * 0.03
+                # 1. DETECCIÓN DE PRESIÓN ABSOLUTA DE DINERO (Fórmula de Rango)
+                cierre = hist['Close'].iloc[-1]
+                maximo = hist['High'].iloc[-1]
+                minimo = hist['Low'].iloc[-1]
+                rango = maximo - minimo
+                factor_presion = (cierre - minimo) / rango if rango > 0 else 0.5
                 
-                hist['EMA_Corta'] = hist['Close'].ewm(span=5, adjust=False).mean()
-                ema_c = hist['EMA_Corta'].iloc[-1]
+                if factor_presion >= 0.52:
+                    flujo_dinero = "🟢 COMPRA (Acumulación)"
+                else:
+                    flujo_dinero = "🔴 VENTA (Distribución)"
                 
-                score_momentum = (vol_rel * 40) + ((precio_hoy / diag_ema if (diag_ema := max(ema_c, 0.01)) else 1) * 60)
+                # 2. EVALUACIÓN FILTROS WARREN BUFFETT (Margen de Seguridad y Consistencia)
+                techo_historico = np.percentile(hist['High'], 85)
+                valor_estimado_ia = techo_historico * 1.15
+                margen_seguridad_sc = ((valor_estimado_ia - precio_act) / valor_estimado_ia) * 100 if valor_estimado_ia > precio_act else 0.0
                 
-                analisis_tactico.append({
+                # Regla de Oro Buffett: Comprar con ventaja competitiva a un gran descuento mínimo establecido
+                cumple_buffett = "SÍ" if margen_seguridad_sc >= cfg_margen else "NO"
+                
+                # 3. EVALUACIÓN FILTROS PETER LYNCH (Crecimiento Tasa de Cambio vs Volatilidad - Buscando el Tenbagger)
+                retornos = hist['Close'].pct_change().dropna()
+                volatilidad_sc = retornos.std()
+                tasa_cambio_30d = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-20]) / hist['Close'].iloc[-20]) * 100
+                
+                # Adaptación de Ratio de Lynch: Crecimiento / Volatilidad relativa (Buscamos alto crecimiento con riesgo controlado)
+                ratio_lynch = tasa_cambio_30d / (volatilidad_sc * 100) if volatilidad_sc > 0 else 0.0
+                cumple_lynch = "SÍ" if (ratio_lynch > 1.2 and tasa_cambio_30d > 0) else "NO"
+                
+                # Calcular ATR para Stop Técnico automático
+                high_low = hist['High'] - hist['Low']
+                high_close = np.abs(hist['High'] - hist['Close'].shift())
+                low_close = np.abs(hist['Low'] - hist['Close'].shift())
+                atr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1).rolling(14).mean().iloc[-1]
+                if atr <= 0: atr = precio_act * 0.04
+                
+                analisis_sc.append({
                     "Ticker": ticker,
-                    "Precio": precio_hoy,
-                    "Volumen Relativo": vol_rel,
-                    "ATR": atr,
-                    "Score": score_momentum
+                    "Precio Actual": precio_act,
+                    "Volumen Relativo": fuerza_vol,
+                    "Flujo de Inyección": flujo_dinero,
+                    "Margen Descuento": margen_seguridad_sc,
+                    "Cumple Buffett": cumple_buffett,
+                    "Ratio Crecimiento/Vol": ratio_lynch,
+                    "Cumple Lynch": cumple_lynch,
+                    "ATR": atr
                 })
             except:
                 pass
-            barra_p3.progress((idx + 1) / len(POOL_ACCIONES))
+            barra_sc.progress((idx + 1) / len(POOL_SMALL_CAPS))
             
-        if analisis_tactico:
-            top_5 = pd.DataFrame(analisis_tactico).sort_values(by="Score", ascending=False).head(5)
-            st.markdown("## 🔥 Selección de Activos con Alta Inyección de Dinero")
+        if analisis_sc:
+            df_sc = pd.DataFrame(analisis_sc)
+            
+            st.markdown("### 📊 Radiografía de Flujos en Small Caps")
+            df_sc_vista = df_sc.copy()
+            df_sc_vista["Precio Actual"] = df_sc_vista["Precio Actual"].map(lambda x: f"${x:,.2f} USD")
+            df_sc_vista["Volumen Relativo"] = df_sc_vista["Volumen Relativo"].map(lambda x: f"{x:.2f}x")
+            df_sc_vista["Margen Descuento"] = df_sc_vista["Margen Descuento"].map(lambda x: f"{x:.1f}%")
+            df_sc_vista["Ratio Crecimiento/Vol"] = df_sc_vista["Ratio Crecimiento/Vol"].map(lambda x: f"{x:.2f}")
+            
+            st.dataframe(df_sc_vista.drop(columns=["ATR"]), use_container_width=True, hide_index=True)
+            
+            st.markdown("### 🎯 Plan de Posiciones Sugeridas (Filtros de Leyendas)")
             st.markdown("---")
             
             conn = sqlite3.connect('agente_quant.db')
             cursor = conn.cursor()
+            fecha_hoy_str = datetime.now().strftime("%Y-%m-%d")
             
-            for rank, (_, fila) in enumerate(top_5.iterrows(), 1):
-                tk_c = fila['Ticker']
-                p_ent = fila['Precio']
-                atr_f = fila['ATR']
-                vol_f = fila['Volumen Relativo']
-                
-                sl_tecnico = p_ent - (1.3 * atr_f)
-                tp_tecnico = p_ent + (2.6 * atr_f)
-                
-                porc_sl = ((p_ent - sl_tecnico) / p_ent) * 100
-                porc_tp = ((tp_tecnico - p_ent) / p_ent) * 100
-                
-                monto_en_riesgo = capital_liquido * (riesgo_permitido / 100)
-                perdida_por_accion = p_ent - sl_tecnico
-                cantidad_acciones = int(monto_en_riesgo / perdida_por_accion) if perdida_por_accion > 0 else 1
-                if cantidad_acciones <= 0: cantidad_acciones = 1
-                
-                capital_comprometido = cantidad_acciones * p_ent
-                
-                try:
-                    cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
-                                   (datetime.now().strftime("%Y-%m-%d"), tk_c, p_ent, sl_tecnico, tp_tecnico))
-                except:
-                    pass
-                
-                if vol_f >= cfg_volumen:
-                    st.success(f"### 🏆 TOP {rank}: {tk_c} —— 🚀 COMPRA DETECTADA (Inyección Institucional)")
-                else:
-                    st.info(f"### 🏆 TOP {rank}: {tk_c} —— 🐳 ALERTA QUANT (Acumulación)")
+            hubo_viables = False
+            for _, fila in df_sc.iterrows():
+                # Condición estricta: Debe tener flujo comprador de inyección de dinero Y cumplir con Buffett o Lynch
+                if "🟢" in fila["Flujo de Inyección"] and (fila["Cumple Buffett"] == "SÍ" or fila["Cumple Lynch"] == "SÍ"):
+                    hubo_viables = True
+                    tk_s = fila["Ticker"]
+                    p_s = fila["Precio Actual"]
+                    atr_s = fila["ATR"]
                     
-                col_r1, col_r2, col_r3 = st.columns(3)
-                with col_r1: st.metric("🎯 Entrada:", f"${p_ent:.2f} USD", f"Volumen: {vol_f:.2f}x")
-                with col_r2: st.metric("🛑 Stop Loss (ATR):", f"${sl_tecnico:.2f} USD", f"-{porc_sl:.1f}%")
-                with col_r3: st.metric("💰 Take Profit:", f"${tp_tecnico:.2f} USD", f"+{porc_tp:.1f}%")
-                
-                st.markdown(f"📦 **Plan Técnico Obligatorio:** Comprar exactamente **{cantidad_acciones} acciones**. Capital total asignado a la posición: **${capital_comprometido:,.2f} USD**.")
-                st.markdown("---")
-                
+                    sl_s = p_s - (1.5 * atr_s)
+                    tp_s = p_s + (3.5 * atr_s)
+                    
+                    # Guardar automáticamente en la base de datos central sin duplicados diarios
+                    cursor.execute("SELECT COUNT(*) FROM registro_operaciones WHERE ticker = ? AND fecha = ?", (tk_s, fecha_hoy_str))
+                    if cursor.fetchone()[0] == 0:
+                        try:
+                            cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
+                                           (fecha_hoy_str, tk_s, p_s, sl_s, tp_s))
+                        except:
+                            pass
+                    
+                    st.success(f"### 🏆 ACCIÓN SMALL CAP FILTRADA: {tk_s} —— VIABLE PARA PORTAFOLIO")
+                    
+                    # Leyenda explicativa de los filtros superados
+                    estrategias_cumplidas = []
+                    if fila["Cumple Buffett"] == "SÍ": estrategias_cumplidas.append("🧱 FILTRO BUFFETT (Margen de Seguridad)")
+                    if fila["Cumple Lynch"] == "SÍ": estrategias_cumplidas.append("🚀 FILTRO LYNCH (Crecimiento de Multiplicación)")
+                    st.write(f"**Validaciones logradas:** {' | '.join(estrategias_cumplidas)}")
+                    
+                    col_p3_1, col_p3_2, col_p3_3 = st.columns(3)
+                    with col_p3_1: st.metric("🛒 Entrada Ordenada:", f"${p_s:.2f} USD", f"Volumen: {fila['Volumen Relativo']:.2f}x")
+                    with col_p3_2: st.metric("🛑 Stop Loss (1.5 ATR):", f"${sl_s:.2f} USD", f"-{((p_s-sl_s)/p_s)*100:.1f}%")
+                    with col_p3_3: st.metric("💰 Objetivo Take Profit:", f"${tp_s:.2f} USD", f"+{((tp_s-p_s)/p_s)*100:.1f}%")
+                    st.markdown("---")
+            
             conn.commit()
             conn.close()
+            
+            if not hubo_viables:
+                st.warning("⚠️ Ninguna Small Cap de la lista cumple simultáneamente con flujo puro de COMPRA y los filtros fundamentales de Buffett o Lynch en este momento.")
         else:
-            st.error("No se encontraron activos que superen el umbral de aceleración mínimo en esta sesión.")
+            st.error("No se pudo conectar a los servidores para extraer las métricas de Small Caps.")
 
 # =====================================================================
 # PESTAÑA 4: CONSULTOR INDEPENDIENTE DE ACTIVOS GLOBAL (CUALQUIER TICKER)
@@ -565,7 +605,7 @@ with tab5:
             except:
                 pass
 
-        # Definición estricta de ganadores macro por volumen relativo
+        # Definición de ganadores macro por volumen relativo si existen
         sector_max_comp = pd.DataFrame(sectores_compradores).sort_values(by="Volumen", ascending=False).iloc[0] if sectores_compradores else None
         sector_max_vent = pd.DataFrame(sectores_vendedores).sort_values(by="Volumen", ascending=False).iloc[0] if sectores_vendedores else None
 
@@ -590,7 +630,6 @@ with tab5:
                         t_hist = t_asset.history(period="5d")
                         if not t_hist.empty:
                             v_ind = t_hist['Volume'].iloc[-1] / t_hist['Volume'].mean()
-                            # Validar que tenga presión alcista individual
                             f_ind = (t_hist['Close'].iloc[-1] - t_hist['Low'].iloc[-1]) / (t_hist['High'].iloc[-1] - t_hist['Low'].iloc[-1])
                             if f_ind >= 0.50:
                                 acciones_comp_detalles.append({"Acción": tk_c, "Volumen Compra": v_ind})
@@ -624,7 +663,6 @@ with tab5:
                         t_hist = t_asset.history(period="5d")
                         if not t_hist.empty:
                             v_ind = t_hist['Volume'].iloc[-1] / t_hist['Volume'].mean()
-                            # Validar que tenga presión bajista individual
                             f_ind = (t_hist['Close'].iloc[-1] - t_hist['Low'].iloc[-1]) / (t_hist['High'].iloc[-1] - t_hist['Low'].iloc[-1])
                             if f_ind < 0.50:
                                 acciones_vent_detalles.append({"Acción": tk_v, "Volumen Venta": v_ind})
@@ -643,7 +681,7 @@ with tab5:
         st.markdown("---")
 
         # =====================================================================
-        # 2. SECCIÓN PREVIA DE CÁLCULO MATEMÁTICO DE PORTAFOLIO (INTACTA)
+        # 2. SECCIÓN DE CÁLCULO MATEMÁTICO DE PORTAFOLIO (MANTENIDA INTACTA)
         # =====================================================================
         sector_lider_general = None
         max_vol_general = -1
