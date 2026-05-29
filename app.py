@@ -1,9 +1,9 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import numpy as np
+import numpy as np  # <-- Corrección: Importación crítica para operaciones matemáticas de la pestaña 5
 import sqlite3
-from datetime import datetime
+from datetime import datetime  # <-- Corrección: Importación crítica para el registro de fechas
 
 # CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="Agente Quant Profesional", layout="wide", page_icon="📈")
@@ -25,14 +25,14 @@ def inicializar_bd():
             take_profit REAL,
             estado TEXT DEFAULT 'PENDIENTE'
         )
-    ''''')
+    ''')
     # Tabla para almacenar los parámetros de calibración del sistema
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS calibracion_sistema (
             parametro TEXT PRIMARY KEY,
             valor REAL
         )
-    ''''')
+    ''')
     # Insertar margen de seguridad por defecto si no existe (0.15 = 15%)
     cursor.execute("INSERT OR IGNORE INTO calibracion_sistema (parametro, valor) VALUES ('margen_seguridad', 0.15)")
     conn.commit()
@@ -80,7 +80,8 @@ def recalibrar_algoritmo():
     
     # Recuperar el valor actual calibrado
     cursor.execute("SELECT valor FROM calibracion_sistema WHERE parametro = 'margen_seguridad'")
-    margen_actual = cursor.fetchone()[0]
+    resultado = cursor.fetchone()
+    margen_actual = resultado[0] if resultado else 0.15
     conn.close()
     return margen_actual
 
@@ -91,7 +92,6 @@ MARGEN_SEGURIDAD_DINAMICO = recalibrar_algoritmo()
 # =====================================================================
 # 📋 DEFINICIÓN DE POOLS DE ACTIVOS Y MACROSECTORES (ETFs)
 # =====================================================================
-# Lista global fija utilizada por la Pestaña 3 e inspeccionada en Pestaña 4
 POOL_ACCIONES = [
     "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "AVGO", "AMD", "TSLA", # Tech & IA
     "BRK-B", "COST", "WMT", "PG", "JPM", "LLY",                            # Valor / Consumo
@@ -99,7 +99,6 @@ POOL_ACCIONES = [
     "HBAR-USD", "NU", "SQ"                                                  # Disruptivas / Fintech
 ]
 
-# Estructura Macro para Rotación de Capital (Pestaña 1 y Pestaña 5)
 ETFS_ROTACION = {
     "Semicondutores (IA)": "SMH",
     "Uranio y Energía Nuclear": "URNM",
@@ -110,7 +109,6 @@ ETFS_ROTACION = {
     "Oro y Refugio": "GLD"
 }
 
-# Componentes de cada ETF para desglose táctico y optimización de riesgo
 COMPONENTES_ETFS = {
     "SMH": ["NVDA", "TSMC", "AVGO", "AMD", "INTC", "ASML"],
     "URNM": ["CCJ", "UUUU", "SRUUF", "DNN", "SMR", "OKLO"],
@@ -168,7 +166,6 @@ with tab1:
             sector_top = df_macro.iloc[0]
             st.success(f"🔥 El sector líder es **{sector_top['Sector']} ({sector_top['ETF']})** con un volumen de **{sector_top['Volumen Relativo']:.2f}x** superior a su promedio.")
             
-            # Desglose de componentes del líder
             etf_ganador = sector_top['ETF']
             componentes_ganadores = COMPONENTES_ETFS.get(etf_ganador, [])
             st.write(f"🔍 Analizando los componentes de `{etf_ganador}` para buscar al líder del sector:")
@@ -204,7 +201,6 @@ with tab2:
                     suelo_institucional = np.percentile(hist['Close'], 15)
                     techo_historico = hist['High'].max()
                     
-                    # Calcular margen de descuento real
                     if precio_actual <= suelo_institucional * (1 + MARGEN_SEGURIDAD_DINAMICO):
                         gangas.append({
                             "Ticker": ticker, "Precio Actual": precio_actual, "Suelo (P15)": suelo_institucional, "Máximo 60D": techo_historico
@@ -238,9 +234,7 @@ with tab3:
                     ema_5 = hist['Close'].ewm(span=5, adjust=False).mean().iloc[-1]
                     vol_rel = hist['Volume'].iloc[-1] / hist['Volume'].mean()
                     
-                    # Filtro de Aceleración: Precio sobre EMA y volumen comprador acompañando
                     if precio_actual > ema_5 and vol_rel > 1.05:
-                        # Cálculo matemático del ATR (Average True Range) para Stop Loss técnico
                         high_low = hist['High'] - hist['Low']
                         high_close = np.abs(hist['High'] - hist['Close'].shift())
                         low_close = np.abs(hist['Low'] - hist['Close'].shift())
@@ -259,7 +253,6 @@ with tab3:
             top_5 = pd.DataFrame(senales).sort_values(by="Score", ascending=False).head(5)
             st.write("### 🔥 Top 5 Activos con Mayor Fuerza de Aceleración")
             
-            # Conexión para guardar la sugerencia operativa
             conn = sqlite3.connect('agente_quant.db')
             cursor = conn.cursor()
             
@@ -268,7 +261,6 @@ with tab3:
                 p_ent = fila['Precio']
                 atr_val = fila['ATR']
                 
-                # Gestión de Riesgo Estricta: Stop Loss a 1.5x ATR
                 stop_loss = p_ent - (1.5 * atr_val)
                 take_profit = p_ent + (3.0 * atr_val)
                 distancia_sl = p_ent - stop_loss
@@ -277,7 +269,6 @@ with tab3:
                 acciones_a_comprar = int(riesgo_usd // distancia_sl) if distancia_sl > 0 else 1
                 if acciones_a_comprar <= 0: acciones_a_comprar = 1
                 
-                # Registrar en la base de datos local para auto-aprendizaje posterior
                 cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
                                (datetime.now().strftime("%Y-%m-%d"), tk_name, p_ent, stop_loss, take_profit))
                 
@@ -324,7 +315,6 @@ with tab4:
                 with col_u3:
                     st.metric("Volumen Diario Relativo:", f"{vol_rel:.2f}x")
                     
-                # Dictamen algorítmico según los parámetros dinámicos
                 if precio_actual <= suelo_p15 * (1 + MARGEN_SEGURIDAD_DINAMICO):
                     st.success("🟢 **ESTADO: APROBADO.** El activo se encuentra en zona de descuento seguro con fuerte respaldo institucional en el suelo.")
                 elif vol_rel > 1.25:
@@ -352,7 +342,6 @@ with tab5:
         max_vol_macro = -1
         presion_sector_lider = "DESCONOCIDO"
         
-        # 1. Escaneo dinámico del sector líder midiendo la presión real del dinero
         for nombre, tick in ETFS_ROTACION.items():
             try:
                 m_tk = yf.Ticker(tick)
@@ -360,19 +349,16 @@ with tab5:
                 if len(m_h) >= 2:
                     v_rel = m_h['Volume'].iloc[-1] / m_h['Volume'].mean()
                     
-                    # Capturar la vela de hoy para calcular la presión del flujo
                     cierre = m_h['Close'].iloc[-1]
                     maximo = m_h['High'].iloc[-1]
                     minimo = m_h['Low'].iloc[-1]
                     
-                    # Fórmula Quant de Presión: Rango de cierre respecto al rango total del día
                     rango_total = maximo - minimo
                     if rango_total > 0:
                         factor_presion = (cierre - minimo) / rango_total
                     else:
                         factor_presion = 0.5
                         
-                    # Si da >= 0.5, el precio cerró en la mitad superior de la vela (Presión Compradora)
                     presion_flujo = "COMPRA (Acumulación)" if factor_presion >= 0.50 else "VENTA (Distribución)"
                     
                     if v_rel > max_vol_macro:
@@ -393,7 +379,6 @@ with tab5:
                 else:
                     st.error(f"🔴 Dirección del Flujo: {presion_sector_lider}")
             
-            # CONTROL DE SEGURIDAD EXTREMO: Si el volumen del sector es de venta, abortamos la operación
             if "VENTA" in presion_sector_lider:
                 st.error(f"⛔ **OPERACIÓN ABORTADA POR EL ALGORITMO:** Aunque el sector `{sector_lider}` mueve mucho capital, las manos fuertes están **VENDIENDO** para tomar ganancias. Comprar aquí sería entrar en el techo. Espera a que el flujo cambie a COMPRA.")
             else:
@@ -409,20 +394,17 @@ with tab5:
                         hist = tk.history(period="60d")
                         
                         if len(hist) >= 20:
-                            # Confirmar que la acción individual también tenga volumen comprador hoy
                             c_cierre = hist['Close'].iloc[-1]
                             c_max = hist['High'].iloc[-1]
                             c_min = hist['Low'].iloc[-1]
                             c_rango = c_max - c_min
                             c_factor = (c_cierre - c_min) / c_rango if c_rango > 0 else 0.5
                             
-                            # Solo dejamos pasar acciones donde el flujo de hoy sea neutral o comprador
                             if c_factor >= 0.45:
                                 retornos = hist['Close'].pct_change().dropna()
                                 volatilidad_real = retornos.std()
                                 precio_act = hist['Close'].iloc[-1]
                                 
-                                # ATR para Stop Loss
                                 high_low = hist['High'] - hist['Low']
                                 high_close = np.abs(hist['High'] - hist['Close'].shift())
                                 low_close = np.abs(hist['Low'] - hist['Close'].shift())
@@ -441,10 +423,8 @@ with tab5:
                     barra_p5.progress((index + 1) / len(componentes))
                     
                 if len(datos_riesgo) >= 3:
-                    # Seleccionar las 3 acciones con menor volatilidad (las más estables)
                     df_riesgo = pd.DataFrame(datos_riesgo).sort_values(by="Volatilidad", ascending=True).head(3)
                     
-                    # Aplicar fórmula de Varianza Inversa para ponderar capital
                     df_riesgo['Inversa_Vol'] = 1.0 / df_riesgo['Volatilidad']
                     suma_inversas = df_riesgo['Inversa_Vol'].sum()
                     df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / suma_inversas
