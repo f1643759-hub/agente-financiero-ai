@@ -257,7 +257,7 @@ with tab1:
             ticker_ganador = ganador["Ticker"]
             
             if ganador["Perfil"] == "CRECIMIENTO / RIESGO":
-                st.success(f"🚀 **ENTORNO RISK-ON:** Las instituciones están inyectando liquidez agresiva en **{ganador['Industria / Sector']} ({ticker_ganador})** con **{ganador['Volumen Relativo']:.2f}x** de volumen. Presión actual: **{ganador['Dirección del Dinero']}**.")
+                st.success(f"🚀 **ENTORNO RISK-ON:** Las institutions están inyectando liquidez agresiva en **{ganador['Industria / Sector']} ({ticker_ganador})** con **{ganador['Volumen Relativo']:.2f}x** de volumen. Presión actual: **{ganador['Dirección del Dinero']}**.")
             else:
                 st.warning(f"⚠️ **ENTORNO RISK-OFF:** Las manos fuertes están buscando protección en **{ganador['Industria / Sector']} ({ticker_ganador})** inyectando **{ganador['Volumen Relativo']:.2f}x** de volumen. Presión actual: **{ganador['Dirección del Dinero']}**.")
             
@@ -604,6 +604,11 @@ with tab5:
                 
                 datos_riesgo = []
                 acciones_compradoras_all = [] # Almacenará todas las acciones con flujo comprador
+                
+                # ---- NUEVAS LISTAS PARA DESGLOSAR ACCIONES DEL SECTOR LÍDER INDIVIDUALMENTE ----
+                lista_puro_compra = []
+                lista_puro_venta = []
+                
                 barra_p5 = st.progress(0)
                 
                 for index, ticker in enumerate(componentes):
@@ -620,9 +625,12 @@ with tab5:
                             
                             c_vol_rel = hist['Volume'].iloc[-1] / hist['Volume'].mean()
                             
-                            # Registramos si es volumen comprador genuino
+                            # Mapeo exhaustivo individual del componente para la nueva sección solicitada
                             if c_factor >= 0.50:
+                                lista_puro_compra.append({"Símbolo": ticker, "Volumen Relativo": c_vol_rel, "Presión": "🟢 COMPRA (Acumulación)"})
                                 acciones_compradoras_all.append({"Acción": ticker, "Volumen Compra": c_vol_rel})
+                            else:
+                                lista_puro_venta.append({"Símbolo": ticker, "Volumen Relativo": c_vol_rel, "Presión": "🔴 VENTA (Distribución)"})
                             
                             if c_factor >= 0.45:
                                 retornos = hist['Close'].pct_change().dropna()
@@ -646,7 +654,28 @@ with tab5:
                         pass
                     barra_p5.progress((index + 1) / len(componentes))
                 
-                # ---- SECCIÓN EXPLICITA SOLICITADA EN PESTAÑA 5: ACCIONES CON MÁS VOLUMEN DE COMPRA ----
+                # ---- NUEVA SECCIÓN ADICIONADA: DESGLOSE COMPLETO DE ACCIONES INDIVIDUALES (COMPRA/VENTA) ----
+                st.markdown(f"### 📋 Desglose Individual de Acciones en {sector_lider}")
+                col_split1, col_split2 = st.columns(2)
+                
+                with col_split1:
+                    st.markdown("#### 🟢 Componentes bajo Presión de COMPRA")
+                    if lista_puro_compra:
+                        df_p_compra = pd.DataFrame(lista_puro_compra).sort_values(by="Volumen Relativo", ascending=False)
+                        st.dataframe(df_p_compra, use_container_width=True, hide_index=True)
+                    else:
+                        st.caption("No hay acciones individuales bajo acumulación en este bloque.")
+                        
+                with col_split2:
+                    st.markdown("#### 🔴 Componentes bajo Presión de VENTA")
+                    if lista_puro_venta:
+                        df_p_venta = pd.DataFrame(lista_puro_venta).sort_values(by="Volumen Relativo", ascending=False)
+                        st.dataframe(df_p_venta, use_container_width=True, hide_index=True)
+                    else:
+                        st.caption("No hay acciones individuales sufriendo distribución en este bloque.")
+                st.markdown("---")
+                
+                # ---- SECCIÓN EXPLICITA: ACCIONES CON MÁS VOLUMEN DE COMPRA ----
                 st.markdown("### 🛒 Acciones de este Sector con Mayor Volumen Comprador")
                 if acciones_compradoras_all:
                     df_acc_comp = pd.DataFrame(acciones_compradoras_all).sort_values(by="Volumen Compra", ascending=False)
