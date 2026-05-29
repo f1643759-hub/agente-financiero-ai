@@ -1,15 +1,15 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import sqlite3
 import numpy as np
+import sqlite3
 from datetime import datetime
+import urllib.request
 
 # Configuración de alta densidad para análisis bursátil masivo
 st.set_page_config(page_title="Agente Quant Inteligente", layout="wide", initial_sidebar_state="expanded")
 
 # PARCHE DE SEGURIDAD PARA PASAR FILTROS DE SERVIDOR
-import urllib.request
 opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')]
 urllib.request.install_opener(opener)
@@ -194,7 +194,6 @@ st.title("🤖 Agente IA Cuantitativo desde Cero")
 st.markdown("### Escáner Ultra-Veloz Anti-Bloqueos de Rotación de Flujos, Valoración Cuant y Gestión Táctica")
 st.markdown("---")
 
-# DECLARACIÓN INTEGRADA DE LAS CINCO PESTAÑAS (AÑADIDA TAB5)
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🛰️ PESTAÑA 1: Rotación de Capital y Flujo Institucional",
     "🧱 PESTAÑA 2: Radar de Descuento Cuantitativo (Largo Plazo)",
@@ -253,7 +252,6 @@ with tab1:
             else:
                 st.warning(f"⚠️ **ENTORNO RISK-OFF:** Las manos fuertes están buscando protección en **{ganador['Industria / Sector']} ({ticker_ganador})** inyectando **{ganador['Volumen Relativo']:.2f}x** de volumen.")
             
-            # Sub-escáner de las acciones líderes pertenecientes al ETF ganador
             st.markdown(f"### 🔍 Escaneo de Concentración Líquida en Componentes de {ticker_ganador}")
             componentes_a_buscar = COMPONENTES_ETFS.get(ticker_ganador, ["AAPL", "MSFT", "NVDA"])
             
@@ -299,9 +297,7 @@ with tab2:
                 if hist.empty: continue
                 
                 p_actual = hist['Close'].iloc[-1]
-                # Análisis Cuantitativo: Suelo institucional (Percentil 15)
                 suelo_cuant = np.percentile(hist['Low'], 15)
-                # Estimación del objetivo por regresión de valor intrínseco matemático
                 valor_real_ia = np.percentile(hist['High'], 85) * 1.12
                 
                 if valor_real_ia > p_actual:
@@ -366,11 +362,9 @@ with tab3:
                 precio_hoy = hist['Close'].iloc[-1]
                 vol_rel = hist['Volume'].iloc[-1] / hist['Volume'].mean()
                 
-                # Cálculo cuantitativo del ATR para Stop Loss técnico
                 atr = (hist['High'] - hist['Low']).rolling(10).mean().iloc[-1]
                 if atr <= 0: atr = precio_hoy * 0.03
                 
-                # EMA Corta para medir momentum de aceleración
                 hist['EMA_Corta'] = hist['Close'].ewm(span=5, adjust=False).mean()
                 ema_c = hist['EMA_Corta'].iloc[-1]
                 
@@ -414,7 +408,6 @@ with tab3:
                 
                 capital_comprometido = cantidad_acciones * p_ent
                 
-                # Registrar de manera inteligente en la memoria persistente de la IA
                 try:
                     cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
                                    (datetime.now().strftime("%Y-%m-%d"), tk_c, p_ent, sl_tecnico, tp_tecnico))
@@ -446,7 +439,6 @@ with tab4:
     st.subheader("🕵️‍♂️ Consultor Quant Libre")
     st.write("Escribe cualquier ticker del mercado global para evaluar su valor intrínseco estadístico, volatilidad y viabilidad de inversión de forma aislada.")
 
-    # Cuadro de entrada libre de texto
     ticker_libre = st.text_input("Introduce el símbolo del activo (Ej: WDC, GOOGL, AAPL, ADE, HBAR-USD):", value="WDC").strip().upper()
 
     if st.button("📊 Analizar Activo Individual", key="btn_p4_analisis_libre"):
@@ -459,7 +451,6 @@ with tab4:
                     if not h_libre.empty:
                         p_libre_actual = h_libre['Close'].iloc[-1]
                         
-                        # Cálculos algorítmicos cuantitativos inmunes a bloqueos
                         suelo_institucional = np.percentile(h_libre['Low'], 15)
                         techo_historico = np.percentile(h_libre['High'], 85)
                         valor_intrinseco_libre = techo_historico * 1.12
@@ -481,7 +472,6 @@ with tab4:
                         fuerza_vol_libre = vol_hoy_libre / vol_prom_libre if vol_prom_libre > 0 else 1.0
                         cumple_volumen = fuerza_vol_libre >= cfg_volumen
                         
-                        # --- INTERFAZ DE RENDIMIENTO DEL ACTIVO ---
                         st.markdown(f"## 📊 Diagnóstico Quant: {ticker_libre}")
                         st.markdown(f"**Precio de Mercado Actual:** ${p_libre_actual:,.2f} USD")
                         st.markdown("---")
@@ -518,127 +508,163 @@ with tab4:
             st.warning("Por favor, introduce un ticker válido antes de ejecutar el escáner.")
 
 # =====================================================================
-# PESTAÑA 5: MINIMIZACIÓN MATEMÁTICA DE RIESGO SECTORIAL (INTEGRACIÓN COMPLETA)
+# PESTAÑA 5: MINIMIZACIÓN MATEMÁTICA DE RIESGO SECTORIAL (PRESIÓN REAL)
 # =====================================================================
 with tab5:
     st.subheader("🛡️ Optimización Avanzada de Mínima Varianza y Criterio de Riesgo")
-    st.write("Esta pestaña localiza automáticamente el sector líder por flujos de dinero y estructura un portafolio blindado de 3 acciones minimizando el riesgo matemático.")
+    st.write("Esta pestaña localiza automáticamente el sector líder por flujos de dinero, desglosa si su volumen es comprador o vendedor, y estructura un portafolio blindado libre de techos.")
     
     presupuesto_total = st.number_input("Capital total para este portafolio blindado (USD):", min_value=100.0, value=3000.0, step=100.0, key="p5_presupuesto")
     
     if st.button("🛡️ Ejecutar Optimización de Mínimo Riesgo", key="btn_p5_ejecutar"):
-        st.write("📡 Escaneando mercados globales para aislar el sector dominante...")
+        st.write("📡 Escaneando mercados globales para aislar el sector dominante y analizar la presión del volumen...")
         
         sector_lider = None
         max_vol_macro = -1
+        presion_sector_lider = "DESCONOCIDO"
         
-        # Escaneo dinámico del sector líder por volumen relativo
+        # 1. Escaneo dinámico del sector líder midiendo la presión real de la vela diaria
         for nombre, tick in ETFS_ROTACION.items():
             try:
                 m_tk = yf.Ticker(tick)
                 m_h = m_tk.history(period="5d")
                 if len(m_h) >= 2:
                     v_rel = m_h['Volume'].iloc[-1] / m_h['Volume'].mean()
+                    
+                    cierre = m_h['Close'].iloc[-1]
+                    maximo = m_h['High'].iloc[-1]
+                    minimo = m_h['Low'].iloc[-1]
+                    
+                    rango_total = maximo - minimo
+                    if rango_total > 0:
+                        factor_presion = (cierre - minimo) / rango_total
+                    else:
+                        factor_presion = 0.5
+                        
+                    # Determinación matemática del flujo direccional
+                    presion_flujo = "COMPRA (Acumulación)" if factor_presion >= 0.50 else "VENTA (Distribución)"
+                    
                     if v_rel > max_vol_macro:
                         max_vol_macro = v_rel
                         sector_lider = tick
+                        presion_sector_lider = presion_flujo
             except:
                 pass
                 
         if sector_lider and sector_lider in COMPONENTES_ETFS:
-            componentes = COMPONENTES_ETFS[sector_lider]
-            st.info(f"🎯 Sector bajo análisis de riesgo: `{sector_lider}`. Componentes detectados: {componentes}")
+            st.markdown("### 📊 Análisis de Flujo Institucional en el Sector")
+            col_macro1, col_macro2 = st.columns(2)
+            with col_macro1:
+                st.metric("Sector Dominante:", f"{sector_lider}", f"Volumen: {max_vol_macro:.2f}x")
+            with col_macro2:
+                if "COMPRA" in presion_sector_lider:
+                    st.success(f"🟢 Dirección del Flujo: {presion_sector_lider}")
+                else:
+                    st.error(f"🔴 Dirección del Flujo: {presion_sector_lider}")
             
-            datos_riesgo = []
-            barra_p5 = st.progress(0)
-            
-            for index, ticker in enumerate(componentes):
-                try:
-                    tk = yf.Ticker(ticker)
-                    hist = tk.history(period="60d")
-                    
-                    if len(hist) >= 20:
-                        # Cálculo de Volatilidad Diaria Real (Desviación Estándar de retornos porcentuales)
-                        retornos = hist['Close'].pct_change().dropna()
-                        volatilidad_real = retornos.std()
-                        precio_act = hist['Close'].iloc[-1]
-                        
-                        # Cálculo del ATR de 14 períodos para Stop Loss matemático regular
-                        high_low = hist['High'] - hist['Low']
-                        high_close = np.abs(hist['High'] - hist['Close'].shift())
-                        low_close = np.abs(hist['Low'] - hist['Close'].shift())
-                        ranges = pd.concat([high_low, high_close, low_close], axis=1)
-                        true_range = ranges.max(axis=1)
-                        atr = true_range.rolling(14).mean().iloc[-1]
-                        
-                        datos_riesgo.append({
-                            "Ticker": ticker,
-                            "Precio": precio_act,
-                            "Volatilidad": volatilidad_real,
-                            "ATR": atr if atr > 0 else (precio_act * 0.03)
-                        })
-                except:
-                    pass
-                barra_p5.progress((index + 1) / len(componentes))
+            # CONTROL DE SEGURIDAD EXTREMO: Si el flujo institucional es de distribución, bloquea la compra en techos
+            if "VENTA" in presion_sector_lider:
+                st.error(f"⛔ **OPERACIÓN ABORTADA POR EL ALGORITMO:** Aunque el sector `{sector_lider}` mueve mucho capital, las manos fuertes están **VENDIENDO** para tomar ganancias. Comprar aquí sería entrar en el techo. Espera a que el flujo cambie a COMPRA.")
+            else:
+                componentes = COMPONENTES_ETFS[sector_lider]
+                st.info(f"🎯 El flujo es saludable. Filtrando componentes de `{sector_lider}` con presión de volumen alcista...")
                 
-            if len(datos_riesgo) >= 3:
-                # Seleccionamos las 3 acciones con MENOR volatilidad estadística (Minimizando riesgo)
-                df_riesgo = pd.DataFrame(datos_riesgo).sort_values(by="Volatilidad", ascending=True).head(3)
+                datos_riesgo = []
+                barra_p5 = st.progress(0)
                 
-                # Asignación de Capital Inteligente: Varianza Inversa (Más capital a la menos volátil)
-                df_riesgo['Inversa_Vol'] = 1.0 / df_riesgo['Volatilidad']
-                suma_inversas = df_riesgo['Inversa_Vol'].sum()
-                df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / suma_inversas
-                
-                st.markdown("## 📊 Portafolio de Mínimo Riesgo Sectorial Construído")
-                st.markdown("La IA ha calculado la distribución ideal de capital para minimizar el impacto de caídas bruscas de precio:")
-                st.markdown("---")
-                
-                conn = sqlite3.connect('agente_quant.db')
-                cursor = conn.cursor()
-                
-                for rank, (_, fila) in enumerate(df_riesgo.iterrows(), 1):
-                    tk_r = fila['Ticker']
-                    p_r = fila['Precio']
-                    vol_r = fila['Volatilidad']
-                    atr_r = fila['ATR']
-                    peso = fila['Ponderación']
-                    
-                    # Dinero exacto asignado a esta acción por ponderación de riesgo
-                    dinero_asignado = presupuesto_total * peso
-                    cantidad_acc = int(dinero_asignado // p_r)
-                    if cantidad_acc <= 0: cantidad_acc = 1
-                    costo_total = cantidad_acc * p_r
-                    
-                    # Stop Loss matemático: 2 veces el ATR para darle espacio institucional óptimo
-                    sl_matematico = p_r - (2.0 * atr_r)
-                    tp_matematico = p_r + (4.0 * atr_r) # Ratio Riesgo/Beneficio 1:2
-                    
+                for index, ticker in enumerate(componentes):
                     try:
-                        cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
-                                       (datetime.now().strftime("%Y-%m-%d"), tk_r, p_r, sl_matematico, tp_matematico))
+                        tk = yf.Ticker(ticker)
+                        hist = tk.history(period="60d")
+                        
+                        if len(hist) >= 20:
+                            # Confirmar presión compradora individual en el activo
+                            c_cierre = hist['Close'].iloc[-1]
+                            c_max = hist['High'].iloc[-1]
+                            c_min = hist['Low'].iloc[-1]
+                            c_rango = c_max - c_min
+                            c_factor = (c_cierre - c_min) / c_rango if c_rango > 0 else 0.5
+                            
+                            # Filtro estricto: Descartar componentes individuales en proceso de venta masiva
+                            if c_factor >= 0.45:
+                                retornos = hist['Close'].pct_change().dropna()
+                                volatilidad_real = retornos.std()
+                                precio_act = hist['Close'].iloc[-1]
+                                
+                                high_low = hist['High'] - hist['Low']
+                                high_close = np.abs(hist['High'] - hist['Close'].shift())
+                                low_close = np.abs(hist['Low'] - hist['Close'].shift())
+                                ranges = pd.concat([high_low, high_close, low_close], axis=1)
+                                true_range = ranges.max(axis=1)
+                                atr = true_range.rolling(14).mean().iloc[-1]
+                                
+                                datos_riesgo.append({
+                                    "Ticker": ticker,
+                                    "Precio": precio_act,
+                                    "Volatilidad": volatilidad_real,
+                                    "ATR": atr if atr > 0 else (precio_act * 0.03)
+                                })
                     except:
                         pass
-                        
-                    st.success(f"### 🛡️ ACTIVO SEGURO {rank}: {tk_r} (Peso en Portafolio: {peso*100:.1f}%)")
+                    barra_p5.progress((index + 1) / len(componentes))
                     
-                    col_p5_1, col_p5_2, col_p5_3 = st.columns(3)
-                    with col_p5_1:
-                        st.metric("💵 Precio de Entrada:", f"${p_r:.2f} USD")
-                        st.caption(f"Asignación de Capital: ${dinero_asignado:,.2f} USD")
-                    with col_p5_2:
-                        st.metric("📉 Volatilidad Diaria:", f"{vol_r*100:.2f}%", "Riesgo Mitigado")
-                        st.caption(f"Cantidad a Comprar: {cantidad_acc} acciones")
-                    with col_p5_3:
-                        st.metric("🛡️ Límite Stop Loss (2x ATR):", f"${sl_matematico:.2f} USD")
-                        st.caption(f"Take Profit Estratégico: ${tp_matematico:.2f} USD")
-                        
-                    st.markdown(f"📦 **Órden Ejecutiva:** Comprar **{cantidad_acc} unidades** de `{tk_r}` a un costo real neto de **${costo_total:,.2f} USD**.")
+                if len(datos_riesgo) >= 3:
+                    # Seleccionamos las 3 acciones con MENOR volatilidad del sector sano
+                    df_riesgo = pd.DataFrame(datos_riesgo).sort_values(by="Volatilidad", ascending=True).head(3)
+                    
+                    # Ponderación matemática de Varianza Inversa
+                    df_riesgo['Inversa_Vol'] = 1.0 / df_riesgo['Volatilidad']
+                    suma_inversas = df_riesgo['Inversa_Vol'].sum()
+                    df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / suma_inversas
+                    
+                    st.markdown("## 📊 Portafolio de Mínimo Riesgo Sectorial Construido")
+                    st.markdown("La IA ha calculado la distribución ideal de capital para minimizar el impacto de caídas bruscas de precio asegurando volumen comprador:")
                     st.markdown("---")
                     
-                conn.commit()
-                conn.close()
-            else:
-                st.warning("No se encontraron suficientes acciones estables en este sector para estructurar el portafolio de 3 activos.")
+                    conn = sqlite3.connect('agente_quant.db')
+                    cursor = conn.cursor()
+                    
+                    for rank, (_, fila) in enumerate(df_riesgo.iterrows(), 1):
+                        tk_r = fila['Ticker']
+                        p_r = fila['Precio']
+                        vol_r = fila['Volatilidad']
+                        atr_r = fila['ATR']
+                        peso = fila['Ponderación']
+                        
+                        dinero_asignado = presupuesto_total * peso
+                        cantidad_acc = int(dinero_asignado // p_r)
+                        if cantidad_acc <= 0: cantidad_acc = 1
+                        costo_total = cantidad_acc * p_r
+                        
+                        # Gestión técnica: Stop Loss a 2x ATR para evitar ruidos de mercado
+                        sl_matematico = p_r - (2.0 * atr_r)
+                        tp_matematico = p_r + (4.0 * atr_r)
+                        
+                        try:
+                            cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
+                                           (datetime.now().strftime("%Y-%m-%d"), tk_r, p_r, sl_matematico, tp_matematico))
+                        except:
+                            pass
+                            
+                        st.success(f"### 🛡️ ACTIVO COMPRADOR SÓLIDO {rank}: {tk_r} (Peso: {peso*100:.1f}%)")
+                        
+                        col_p5_1, col_p5_2, col_p5_3 = st.columns(3)
+                        with col_p5_1:
+                            st.metric("💵 Entrada:", f"${p_r:.2f} USD")
+                            st.caption(f"Asignación: ${dinero_asignado:,.2f} USD")
+                        with col_p5_2:
+                            st.metric("📉 Volatilidad:", f"{vol_r*100:.2f}%", "Flujo Seguro")
+                            st.caption(f"Comprar: {cantidad_acc} acciones")
+                        with col_p5_3:
+                            st.metric("🛡️ Stop Loss:", f"${sl_matematico:.2f} USD")
+                            st.caption(f"Take Profit: ${tp_matematico:.2f} USD")
+                            
+                        st.markdown(f"📦 **Órden:** Comprar **{cantidad_acc} u** de `{tk_r}`. Costo real neto: **${costo_total:,.2f} USD**.")
+                        st.markdown("---")
+                        
+                    conn.commit()
+                    conn.close()
+                else:
+                    st.warning("No se encontraron suficientes acciones con presión compradora clara en este sector en este momento.")
         else:
             st.error("No se pudo mapear la rotación macro del mercado. Verifica la conexión.")
