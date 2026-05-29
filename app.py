@@ -249,7 +249,7 @@ with tab1:
         if analisis_macro:
             df_macro = pd.DataFrame(analisis_macro).sort_values(by="Volumen Relativo", ascending=False)
             df_m_vista = df_macro.copy()
-            df_m_vista["Variación Diaria"] = df_m_vista["Variación Diaria"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
+            df_m_vista["Variación Diaria"] = df_m_vista["Variación Daily"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
             df_m_vista["Volumen Relativo"] = df_m_vista["Volumen Relativo"].map(lambda x: f"{x:.2f}x volumen regular")
             st.dataframe(df_m_vista, use_container_width=True, hide_index=True)
             
@@ -257,7 +257,7 @@ with tab1:
             ticker_ganador = ganador["Ticker"]
             
             if ganador["Perfil"] == "CRECIMIENTO / RIESGO":
-                st.success(f"🚀 **ENTORNO RISK-ON:** Las institutions están inyectando liquidez agresiva en **{ganador['Industria / Sector']} ({ticker_ganador})** con **{ganador['Volumen Relativo']:.2f}x** de volumen. Presión actual: **{ganador['Dirección del Dinero']}**.")
+                st.success(f"🚀 **ENTORNO RISK-ON:** Las instituciones están inyectando liquidez agresiva en **{ganador['Industria / Sector']} ({ticker_ganador})** con **{ganador['Volumen Relativo']:.2f}x** de volumen. Presión actual: **{ganador['Dirección del Dinero']}**.")
             else:
                 st.warning(f"⚠️ **ENTORNO RISK-OFF:** Las manos fuertes están buscando protección en **{ganador['Industria / Sector']} ({ticker_ganador})** inyectando **{ganador['Volumen Relativo']:.2f}x** de volumen. Presión actual: **{ganador['Dirección del Dinero']}**.")
             
@@ -526,25 +526,22 @@ with tab4:
             st.warning("Por favor, introduce un ticker válido antes de ejecutar el escáner.")
 
 # =====================================================================
-# PESTAÑA 5: MINIMIZACIÓN MATEMÁTICA DE RIESGO SECTORIAL (PRESIÓN REAL)
+# PESTAÑA 5: AUDITORÍA DE PRESIÓN ABSOLUTA (COMPRA VS VENTA MACRO Y MICRO)
 # =====================================================================
 with tab5:
     st.subheader("🛡️ Optimización Avanzada de Mínima Varianza y Criterio de Riesgo")
-    st.write("Esta pestaña localiza automáticamente el sector líder, aislando específicamente el sector y activos con la mayor presión de compra institucional en el mercado.")
+    st.write("Esta pestaña escanea el mercado para aislar simultáneamente los sectores y acciones líderes bajo presión absoluta de COMPRA y VENTA.")
     
     presupuesto_total = st.number_input("Capital total para este portafolio blindado (USD):", min_value=100.0, value=3000.0, step=100.0, key="p5_presupuesto")
     
     if st.button("🛡️ Ejecutar Optimización de Mínimo Riesgo", key="btn_p5_ejecutar"):
-        st.write("📡 Escaneando mercados globales para aislar el sector dominante y analizar la presión del volumen...")
+        st.write("📡 Escaneando mercados globales e individualizando el comportamiento del capital...")
         
-        sector_lider = None
-        max_vol_macro = -1
-        presion_sector_lider = "DESCONOCIDO"
-        
-        # Guardaremos todos los sectores con volumen neto de compra para auditoría visual
+        # Estructuras de control macro
         sectores_compradores = []
+        sectores_vendedores = []
         
-        # 1. Escaneo dinámico del sector líder midiendo la presión real de la vela diaria
+        # 1. BARRIDO MACRO EN TIEMPO REAL
         for nombre, tick in ETFS_ROTACION.items():
             try:
                 m_tk = yf.Ticker(tick)
@@ -557,80 +554,135 @@ with tab5:
                     minimo = m_h['Low'].iloc[-1]
                     
                     rango_total = maximo - minimo
-                    if rango_total > 0:
-                        factor_presion = (cierre - minimo) / rango_total
-                    else:
-                        factor_presion = 0.5
-                        
-                    presion_flujo = "COMPRA (Acumulación)" if factor_presion >= 0.50 else "VENTA (Distribución)"
+                    factor_presion = (cierre - minimo) / rango_total if rango_total > 0 else 0.5
+                    
+                    nodo_sector = {"Sector": nombre, "Ticker": tick, "Volumen": v_rel}
                     
                     if factor_presion >= 0.50:
-                        sectores_compradores.append({"Sector": nombre, "Ticker": tick, "Volumen": v_rel})
-                    
-                    if v_rel > max_vol_macro:
-                        max_vol_macro = v_rel
-                        sector_lider = tick
-                        presion_sector_lider = presion_flujo
+                        sectores_compradores.append(nodo_sector)
+                    else:
+                        sectores_vendedores.append(nodo_sector)
             except:
                 pass
-                
-        # ---- SECCIÓN EXPLICITA SOLICITADA EN PESTAÑA 5: SECTOR CON MÁS VOLUMEN DE COMPRA ----
-        st.markdown("### 🛒 Sectores bajo Presión Exclusiva de COMPRA")
-        if sectores_compradores:
-            df_sect_comp = pd.DataFrame(sectores_compradores).sort_values(by="Volumen", ascending=False)
-            top_sector_comprador = df_sect_comp.iloc[0]
-            st.success(f"🔥 **SECTOR CON MÁS VOLUMEN DE COMPRA:** **{top_sector_comprador['Sector']} ({top_sector_comprador['Ticker']})** con una inyección alcista de **{top_sector_comprador['Volumen']:.2f}x**.")
-            with st.expander("Ver lista completa de sectores en acumulación"):
-                st.table(df_sect_comp)
-        else:
-            st.warning("No se registraron sectores con presión neta de compra institucional hoy.")
 
-        if sector_lider and sector_lider in COMPONENTES_ETFS:
-            st.markdown("### 📊 Análisis de Flujo Institucional en el Sector Dominante")
-            col_macro1, col_macro2 = st.columns(2)
-            with col_macro1:
-                st.metric("Sector con Mayor Movimiento de Dinero:", f"{sector_lider}", f"Volumen: {max_vol_macro:.2f}x")
-            with col_macro2:
-                if "COMPRA" in presion_sector_lider:
-                    st.success(f"🟢 Dirección del Flujo en Sector Líder: {presion_sector_lider}")
+        # Definición estricta de ganadores macro por volumen relativo
+        sector_max_comp = pd.DataFrame(sectores_compradores).sort_values(by="Volumen", ascending=False).iloc[0] if sectores_compradores else None
+        sector_max_vent = pd.DataFrame(sectores_vendedores).sort_values(by="Volumen", ascending=False).iloc[0] if sectores_vendedores else None
+
+        st.markdown("---")
+        col_macro_c, col_macro_v = st.columns(2)
+
+        # =====================================================================
+        # BLOQUE IZQUIERDO: SECTOR E INDIVIDUALIZACIÓN DE COMPRAS
+        # =====================================================================
+        with col_macro_c:
+            st.markdown("### 🟢 FLUJO INSTITUCIONAL ALCISTA (COMPRA)")
+            if sector_max_comp is not None:
+                st.success(f"🔥 **Sector Líder en Acumulación:**\n**{sector_max_comp['Sector']} ({sector_max_comp['Ticker']})** con **{sector_max_comp['Volumen']:.2f}x**")
+                
+                # Cargar y desglosar componentes individuales de este sector alcista
+                comp_c = COMPONENTES_ETFS.get(sector_max_comp['Ticker'], [])
+                acciones_comp_detalles = []
+                
+                for tk_c in comp_c:
+                    try:
+                        t_asset = yf.Ticker(tk_c)
+                        t_hist = t_asset.history(period="5d")
+                        if not t_hist.empty:
+                            v_ind = t_hist['Volume'].iloc[-1] / t_hist['Volume'].mean()
+                            # Validar que tenga presión alcista individual
+                            f_ind = (t_hist['Close'].iloc[-1] - t_hist['Low'].iloc[-1]) / (t_hist['High'].iloc[-1] - t_hist['Low'].iloc[-1])
+                            if f_ind >= 0.50:
+                                acciones_comp_detalles.append({"Acción": tk_c, "Volumen Compra": v_ind})
+                    except:
+                        pass
+                
+                if acciones_comp_detalles:
+                    df_acc_c = pd.DataFrame(acciones_comp_detalles).sort_values(by="Volumen Compra", ascending=False)
+                    st.markdown("**Acciones de este sector con Mayor Volumen Comprador:**")
+                    st.table(df_acc_c)
                 else:
-                    st.error(f"🔴 Dirección del Flujo en Sector Líder: {presion_sector_lider}")
-            
-            if "VENTA" in presion_sector_lider:
-                st.error(f"⛔ **OPERACIÓN ABORTADA POR EL ALGORITMO:** Aunque el sector `{sector_lider}` mueve mucho capital, las manos fuertes están **VENDIENDO** para tomar ganancias. Comprar aquí sería entrar en el techo. Espera a que el flujo cambie a COMPRA.")
+                    st.caption("No se detectaron activos individuales con factor puro de acumulación hoy.")
             else:
-                componentes = COMPONENTES_ETFS[sector_lider]
-                st.info(f"🎯 El flujo es saludable. Filtrando componentes de `{sector_lider}` con presión de volumen alcista...")
+                st.warning("No hay sectores bajo presión macro de compra en esta sesión.")
+
+        # =====================================================================
+        # BLOQUE DERECHO: SECTOR E INDIVIDUALIZACIÓN DE VENTAS
+        # =====================================================================
+        with col_macro_v:
+            st.markdown("### 🔴 FLUJO INSTITUCIONAL BAJISTA (VENTA)")
+            if sector_max_vent is not None:
+                st.error(f"🚨 **Sector Líder en Distribución:**\n**{sector_max_vent['Sector']} ({sector_max_vent['Ticker']})** con **{sector_max_vent['Volumen']:.2f}x**")
                 
+                # Cargar y desglosar componentes individuales de este sector bajista
+                comp_v = COMPONENTES_ETFS.get(sector_max_vent['Ticker'], [])
+                acciones_vent_detalles = []
+                
+                for tk_v in comp_v:
+                    try:
+                        t_asset = yf.Ticker(tk_v)
+                        t_hist = t_asset.history(period="5d")
+                        if not t_hist.empty:
+                            v_ind = t_hist['Volume'].iloc[-1] / t_hist['Volume'].mean()
+                            # Validar que tenga presión bajista individual
+                            f_ind = (t_hist['Close'].iloc[-1] - t_hist['Low'].iloc[-1]) / (t_hist['High'].iloc[-1] - t_hist['Low'].iloc[-1])
+                            if f_ind < 0.50:
+                                acciones_vent_detalles.append({"Acción": tk_v, "Volumen Venta": v_ind})
+                    except:
+                        pass
+                
+                if acciones_vent_detalles:
+                    df_acc_v = pd.DataFrame(acciones_vent_detalles).sort_values(by="Volumen Venta", ascending=False)
+                    st.markdown("**Acciones de este sector con Mayor Volumen Vendedor:**")
+                    st.table(df_acc_v)
+                else:
+                    st.caption("No se detectaron activos individuales sufriendo distribución institucional en este bloque.")
+            else:
+                st.info("Mercado completamente plano. No hay sectores bajo presión macro de venta hoy.")
+
+        st.markdown("---")
+
+        # =====================================================================
+        # 2. SECCIÓN PREVIA DE CÁLCULO MATEMÁTICO DE PORTAFOLIO (INTACTA)
+        # =====================================================================
+        # Se ejecuta basándose exclusivamente en el sector ganador general por volumen (parámetro max_vol_macro original)
+        sector_lider_general = None
+        max_vol_general = -1
+        presion_lider_general = "DESCONOCIDO"
+
+        for nombre, tick in ETFS_ROTACION.items():
+            try:
+                m_tk = yf.Ticker(tick)
+                m_h = m_tk.history(period="5d")
+                if len(m_h) >= 2:
+                    v_rel = m_h['Volume'].iloc[-1] / m_h['Volume'].mean()
+                    cierre = m_h['Close'].iloc[-1]
+                    maximo = m_h['High'].iloc[-1]
+                    minimo = m_h['Low'].iloc[-1]
+                    rango = maximo - minimo
+                    factor = (cierre - minimo) / rango if rango > 0 else 0.5
+                    
+                    if v_rel > max_vol_general:
+                        max_vol_general = v_rel
+                        sector_lider_general = tick
+                        presion_lider_general = "COMPRA" if factor >= 0.50 else "VENTA"
+            except:
+                pass
+
+        if sector_lider_general and sector_lider_general in COMPONENTES_ETFS:
+            if presion_lider_general == "VENTA":
+                st.error(f"⛔ **OPERACIÓN ABORTADA POR EL ALGORITMO:** Aunque arriba tienes la radiografía analítica completa, el sector absoluto que domina el mercado por volumen (`{sector_lider_general}`) está en modo **VENTA**. El sistema bloquea la asignación táctica automatizada por motivos de riesgo.")
+            else:
+                componentes = COMPONENTES_ETFS[sector_lider_general]
                 datos_riesgo = []
-                acciones_compradoras_all = [] # Almacenará todas las acciones con flujo comprador
                 
-                # ---- NUEVAS LISTAS PARA DESGLOSAR ACCIONES DEL SECTOR LÍDER INDIVIDUALMENTE ----
-                lista_puro_compra = []
-                lista_puro_venta = []
-                
-                barra_p5 = st.progress(0)
-                
-                for index, ticker in enumerate(componentes):
+                for ticker in componentes:
                     try:
                         tk = yf.Ticker(ticker)
                         hist = tk.history(period="60d")
-                        
                         if len(hist) >= 20:
                             c_cierre = hist['Close'].iloc[-1]
-                            c_max = hist['High'].iloc[-1]
-                            c_min = hist['Low'].iloc[-1]
-                            c_rango = c_max - c_min
-                            c_factor = (c_cierre - c_min) / c_rango if c_rango > 0 else 0.5
-                            
-                            c_vol_rel = hist['Volume'].iloc[-1] / hist['Volume'].mean()
-                            
-                            # Mapeo exhaustivo individual del componente para la nueva sección solicitada
-                            if c_factor >= 0.50:
-                                lista_puro_compra.append({"Símbolo": ticker, "Volumen Relativo": c_vol_rel, "Presión": "🟢 COMPRA (Acumulación)"})
-                                acciones_compradoras_all.append({"Acción": ticker, "Volumen Compra": c_vol_rel})
-                            else:
-                                lista_puro_venta.append({"Símbolo": ticker, "Volumen Relativo": c_vol_rel, "Presión": "🔴 VENTA (Distribución)"})
+                            c_factor = (c_cierre - hist['Low'].iloc[-1]) / (hist['High'].iloc[-1] - hist['Low'].iloc[-1]) if (hist['High'].iloc[-1] - hist['Low'].iloc[-1]) > 0 else 0.5
                             
                             if c_factor >= 0.45:
                                 retornos = hist['Close'].pct_change().dropna()
@@ -640,59 +692,22 @@ with tab5:
                                 high_low = hist['High'] - hist['Low']
                                 high_close = np.abs(hist['High'] - hist['Close'].shift())
                                 low_close = np.abs(hist['Low'] - hist['Close'].shift())
-                                ranges = pd.concat([high_low, high_close, low_close], axis=1)
-                                true_range = ranges.max(axis=1)
+                                true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
                                 atr = true_range.rolling(14).mean().iloc[-1]
                                 
                                 datos_riesgo.append({
-                                    "Ticker": ticker,
-                                    "Precio": precio_act,
-                                    "Volatilidad": volatilidad_real,
-                                    "ATR": atr if atr > 0 else (precio_act * 0.03)
+                                    "Ticker": ticker, "Precio": precio_act, "Volatilidad": volatilidad_real, "ATR": atr if atr > 0 else (precio_act * 0.03)
                                 })
                     except:
                         pass
-                    barra_p5.progress((index + 1) / len(componentes))
-                
-                # ---- NUEVA SECCIÓN ADICIONADA: DESGLOSE COMPLETO DE ACCIONES INDIVIDUALES (COMPRA/VENTA) ----
-                st.markdown(f"### 📋 Desglose Individual de Acciones en {sector_lider}")
-                col_split1, col_split2 = st.columns(2)
-                
-                with col_split1:
-                    st.markdown("#### 🟢 Componentes bajo Presión de COMPRA")
-                    if lista_puro_compra:
-                        df_p_compra = pd.DataFrame(lista_puro_compra).sort_values(by="Volumen Relativo", ascending=False)
-                        st.dataframe(df_p_compra, use_container_width=True, hide_index=True)
-                    else:
-                        st.caption("No hay acciones individuales bajo acumulación en este bloque.")
-                        
-                with col_split2:
-                    st.markdown("#### 🔴 Componentes bajo Presión de VENTA")
-                    if lista_puro_venta:
-                        df_p_venta = pd.DataFrame(lista_puro_venta).sort_values(by="Volumen Relativo", ascending=False)
-                        st.dataframe(df_p_venta, use_container_width=True, hide_index=True)
-                    else:
-                        st.caption("No hay acciones individuales sufriendo distribución en este bloque.")
-                st.markdown("---")
-                
-                # ---- SECCIÓN EXPLICITA: ACCIONES CON MÁS VOLUMEN DE COMPRA ----
-                st.markdown("### 🛒 Acciones de este Sector con Mayor Volumen Comprador")
-                if acciones_compradoras_all:
-                    df_acc_comp = pd.DataFrame(acciones_compradoras_all).sort_values(by="Volumen Compra", ascending=False)
-                    st.success(f"💎 **ACCIÓN LÍDER EN COMPRAS:** **{df_acc_comp.iloc[0]['Acción']}** operando con **{df_acc_comp.iloc[0]['Volumen Compra']:.2f}x** de volumen acumulador neto.")
-                    st.table(df_acc_comp)
-                else:
-                    st.caption("No se detectaron activos individuales con factor puro de acumulación en la última vela.")
-                    
+
                 if len(datos_riesgo) >= 3:
                     df_riesgo = pd.DataFrame(datos_riesgo).sort_values(by="Volatilidad", ascending=True).head(3)
-                    
                     df_riesgo['Inversa_Vol'] = 1.0 / df_riesgo['Volatilidad']
-                    suma_inversas = df_riesgo['Inversa_Vol'].sum()
-                    df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / suma_inversas
+                    df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / df_riesgo['Inversa_Vol'].sum()
                     
                     st.markdown("## 📊 Portafolio de Mínimo Riesgo Sectorial Construido")
-                    st.markdown("La IA ha calculado la distribución ideal de capital para minimizar el impacto de caídas bruscas de precio asegurando volumen comprador:")
+                    st.markdown("La IA ha calculado la distribución ideal de capital para minimizar el impacto de caídas bruscas asegurando volumen comprador:")
                     st.markdown("---")
                     
                     conn = sqlite3.connect('agente_quant.db')
@@ -722,22 +737,14 @@ with tab5:
                         st.success(f"### 🛡️ ACTIVO COMPRADOR SÓLIDO {rank}: {tk_r} (Peso: {peso*100:.1f}%)")
                         
                         col_p5_1, col_p5_2, col_p5_3 = st.columns(3)
-                        with col_p5_1:
-                            st.metric("💵 Entrada:", f"${p_r:.2f} USD")
-                            st.caption(f"Asignación: ${dinero_asignado:,.2f} USD")
-                        with col_p5_2:
-                            st.metric("📉 Volatilidad:", f"{vol_r*100:.2f}%", "Flujo Seguro")
-                            st.caption(f"Comprar: {cantidad_acc} acciones")
-                        with col_p5_3:
-                            st.metric("🛡️ Stop Loss:", f"${sl_matematico:.2f} USD")
-                            st.caption(f"Take Profit: ${tp_matematico:.2f} USD")
-                            
+                        with col_p5_1: st.metric("💵 Entrada:", f"${p_r:.2f} USD", f"Asignación: ${dinero_asignado:,.2f}")
+                        with col_p5_2: st.metric("📉 Volatilidad:", f"{vol_r*100:.2f}%", f"Comprar: {cantidad_acc} u")
+                        with col_p5_3: st.metric("🛡️ Stop Loss:", f"${sl_matematico:.2f} USD", f"TP: ${tp_matematico:.2f}")
+                        
                         st.markdown(f"📦 **Órden:** Comprar **{cantidad_acc} u** de `{tk_r}`. Costo real neto: **${costo_total:,.2f} USD**.")
                         st.markdown("---")
                         
                     conn.commit()
                     conn.close()
                 else:
-                    st.warning("No se encontraron suficientes acciones con presión compradora clara en este sector en este momento.")
-        else:
-            st.error("No se pudo mapear la rotación macro del mercado. Verifica la conexión.")
+                    st.warning("No se encontraron suficientes acciones que cumplan los requisitos estrictos de volatilidad para armar el portafolio en este instante.")
