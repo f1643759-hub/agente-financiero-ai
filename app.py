@@ -173,7 +173,7 @@ POOL_CRIPTOMONEDAS = {
     "Bitcoin": "BTC-USD",
     "Ethereum": "ETH-USD",
     "Solana": "SOL-USD",
-    "Hedera Hasgraph": "HBAR-USD", #
+    "Hedera Hasgraph": "HBAR-USD",
     "Ripple": "XRP-USD",
     "Cardano": "ADA-USD",
     "Avalanche": "AVAX-USD",
@@ -489,7 +489,7 @@ with tab3:
 with tab4:
     st.subheader("🕵️‍♂️ Consultor Quant Libre")
     st.write("Escribe cualquier ticker del mercado global para evaluar su valor intrínseco de forma aislada.")
-    ticker_libre = st.text_input("Introduce el símbolo del activo (Ej: WDC, GOOGL, AAPL, HBAR-USD):", value="WDC").strip().upper() #
+    ticker_libre = st.text_input("Introduce el símbolo del activo (Ej: WDC, GOOGL, AAPL, HBAR-USD):", value="WDC").strip().upper()
 
     if st.button("📊 Analizar Activo Individual", key="btn_p4_analisis_libre"):
         if ticker_libre:
@@ -536,7 +536,7 @@ with tab4:
                         st.markdown("### 🚦 Evaluación de Requisitos Estrictos de Inversión")
                         
                         if cumple_margen and cumple_volumen:
-                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) and cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
+                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) y cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
                         elif cumple_margen and not cumple_volumen:
                             st.warning(f"🟡 **ACTIVO EN LISTA DE ESPERA (FALTA FLUJO):** El precio es excelente y tiene un gran descuento ({margen_libre:.1f}%), pero el volumen institucional está apagado. Monitorear inyección de capital antes de entrar.")
                         else:
@@ -785,7 +785,7 @@ with tab6:
             # FILTRADO ANTI-ERROR: Aislar el activo con mayor inyección de dinero que sea estrictamente de COMPRA
             filtrado_ganadores = df_crypto[df_crypto["Dirección Flujo"].str.contains("🟢")].sort_values(by="Score Direccional", ascending=False)
             
-            if not Casino_viable := filtrado_ganadores.empty:
+            if not filtrado_ganadores.empty:
                 alerta_ganadora = filtrado_ganadores.iloc[0]
                 crypto_tk = alerta_ganadora["Ticker"]
                 crypto_name = alerta_ganadora["Nombre"]
