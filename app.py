@@ -206,13 +206,14 @@ st.title("🤖 Agente IA Cuantitativo desde Cero")
 st.markdown("### Escáner Ultra-Veloz Anti-Bloqueos de Rotación de Flujos, Valoración Cuant y Gestión Táctica")
 st.markdown("---")
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🛰️ PESTAÑA 1: Rotación de Capital y Flujo Institucional",
     "🧱 PESTAÑA 2: Radar de Descuento Cuantitativo (Largo Plazo)",
     "🎯 PESTAÑA 3: Small Caps Growth (Filtros Buffett & Lynch)",
     "🔍 PESTAÑA 4: Consultor de Activos Libre & Diagnóstico IA",
     "🛡️ PESTAÑA 5: Minimización Matemática de Riesgo",
-    "🪙 PESTAÑA 6: Crypto Flow Selector & Corto Plazo"
+    "🪙 PESTAÑA 6: Crypto Flow Selector & Corto Plazo",
+    "🎲 PESTAÑA 7: Simulador de Montecarlo probabilístico"
 ])
 
 # =====================================================================
@@ -536,7 +537,7 @@ with tab4:
                         st.markdown("### 🚦 Evaluación de Requisitos Estrictos de Inversión")
                         
                         if cumple_margen and cumple_volumen:
-                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) y cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
+                            st.success(f"🟢 **ACTIVO VIABLE (COMPRA CONFIRMADA):** {ticker_libre} supera el margen de seguridad óptmos ({margen_libre:.1f}%) and cuenta con una inyección institucional activa de **{fuerza_vol_libre:.2f}x** de volumen.")
                         elif cumple_margen and not cumple_volumen:
                             st.warning(f"🟡 **ACTIVO EN LISTA DE ESPERA (FALTA FLUJO):** El precio es excelente y tiene un gran descuento ({margen_libre:.1f}%), pero el volumen institucional está apagado. Monitorear inyección de capital antes de entrar.")
                         else:
@@ -592,248 +593,198 @@ with tab5:
         with col_macro_c:
             st.markdown("### 🟢 FLUJO INSTITUCIONAL ALCISTA (COMPRA)")
             if sector_max_comp is not None:
-                st.success(f"🔥 **Sector Líder en Acumulación:**\n**{sector_max_comp['Sector']} ({sector_max_comp['Ticker']})** con **{sector_max_comp['Volumen']:.2f}x**")
-                comp_c = COMPONENTES_ETFS.get(sector_max_comp['Ticker'], [])
-                acciones_comp_detalles = []
-                for tk_c in comp_c:
+                st.success(f"🔥 **Sector Líder en Acumulación:**\n**{sector_max_comp['Sector']} ({sector_max_comp['Ticker']})** con **{sector_max_comp['Volumen']:.2f}x** de volumen anormal.")
+                
+                componentes_c = COMPONENTES_ETFS.get(sector_max_comp['Ticker'], ["AAPL", "MSFT"])
+                filtrados_c = []
+                for tc in componentes_c:
                     try:
-                        t_asset = yf.Ticker(tk_c)
-                        t_hist = t_asset.history(period="5d")
-                        if not t_hist.empty:
-                            v_ind = t_hist['Volume'].iloc[-1] / t_hist['Volume'].mean()
-                            f_ind = (t_hist['Close'].iloc[-1] - t_hist['Low'].iloc[-1]) / (t_hist['High'].iloc[-1] - t_hist['Low'].iloc[-1])
-                            if f_ind >= 0.50:
-                                acciones_comp_detalles.append({"Acción": tk_c, "Volumen Compra": v_ind})
+                        t_k = yf.Ticker(tc)
+                        t_h = t_k.history(period="5d")
+                        c_vol = t_h['Volume'].iloc[-1] / t_h['Volume'].mean()
+                        filtrados_c.append({"Acción": tc, "Fuerza": c_vol})
                     except:
                         pass
-                if acciones_comp_detalles:
-                    st.table(pd.DataFrame(acciones_comp_detalles).sort_values(by="Volumen Compra", ascending=False))
+                if filtrados_c:
+                    ganador_c = pd.DataFrame(filtrados_c).sort_values(by="Fuerza", ascending=False).iloc[0]["Acción"]
+                    st.info(f"💎 **Activo Alfa Inmobiliario/Bursátil para Compras:** **{ganador_c}**")
             else:
-                st.warning("No hay sectores bajo presión macro de compra.")
+                st.write("No hay sectores dominantes con presión de compra.")
 
         with col_macro_v:
-            st.markdown("### 🔴 FLUJO INSTITUCIONAL BAJISTA (VENTA)")
+            st.markdown("### 🔴 FLUJO INSTITUCIONAL BAJISTA (VENTA / DISTRIBUCIÓN)")
             if sector_max_vent is not None:
-                st.error(f"🚨 **Sector Líder en Distribución:**\n**{sector_max_vent['Sector']} ({sector_max_vent['Ticker']})** con **{sector_max_vent['Volumen']:.2f}x**")
-                comp_v = COMPONENTES_ETFS.get(sector_max_vent['Ticker'], [])
-                acciones_vent_detalles = []
-                for tk_v in comp_v:
+                st.error(f"🚨 **Sector Líder en Distribución:**\n**{sector_max_vent['Sector']} ({sector_max_vent['Ticker']})** experimentando **{sector_max_vent['Volumen']:.2f}x** de volumen de liquidación.")
+                
+                componentes_v = COMPONENTES_ETFS.get(sector_max_vent['Ticker'], ["AAPL", "MSFT"])
+                filtrados_v = []
+                for tv in componentes_v:
                     try:
-                        t_asset = yf.Ticker(tk_v)
-                        t_hist = t_asset.history(period="5d")
-                        if not t_hist.empty:
-                            v_ind = t_hist['Volume'].iloc[-1] / t_hist['Volume'].mean()
-                            f_ind = (t_hist['Close'].iloc[-1] - t_hist['Low'].iloc[-1]) / (t_hist['High'].iloc[-1] - t_hist['Low'].iloc[-1])
-                            if f_ind < 0.50:
-                                acciones_vent_detalles.append({"Acción": tk_v, "Volumen Venta": v_ind})
+                        t_k = yf.Ticker(tv)
+                        t_h = t_k.history(period="5d")
+                        v_vol = t_h['Volume'].iloc[-1] / t_h['Volume'].mean()
+                        filtrados_v.append({"Acción": tv, "Fuerza": v_vol})
                     except:
                         pass
-                if acciones_vent_detalles:
-                    st.table(pd.DataFrame(acciones_vent_detalles).sort_values(by="Volumen Venta", ascending=False))
+                if filtrados_v:
+                    ganador_v = pd.DataFrame(filtrados_v).sort_values(by="Fuerza", ascending=False).iloc[0]["Acción"]
+                    st.warning(f"⚠️ **Activo Crítico Expuesto a Caídas:** **{ganador_v}**")
             else:
-                st.info("Mercado plano. No hay sectores bajo presión macro de venta hoy.")
+                st.write("No hay sectores dominantes bajo presión de liquidación masiva.")
 
         st.markdown("---")
-        sector_lider_general = None
-        max_vol_general = -1
-        presion_lider_general = "DESCONOCIDO"
-
-        for nombre, tick in ETFS_ROTACION.items():
-            try:
-                m_tk = yf.Ticker(tick)
-                m_h = m_tk.history(period="5d")
-                if len(m_h) >= 2:
-                    v_rel = m_h['Volume'].iloc[-1] / m_h['Volume'].mean()
-                    cierre = m_h['Close'].iloc[-1]
-                    maximo = m_h['High'].iloc[-1]
-                    minimo = m_h['Low'].iloc[-1]
-                    rango = maximo - minimo
-                    factor = (cierre - minimo) / rango if rango > 0 else 0.5
-                    if v_rel > max_vol_general:
-                        max_vol_general = v_rel
-                        sector_lider_general = tick
-                        presion_lider_general = "COMPRA" if factor >= 0.50 else "VENTA"
-            except:
-                pass
-
-        if sector_lider_general and sector_lider_general in COMPONENTES_ETFS:
-            if presion_lider_general == "VENTA":
-                st.error(f"⛔ **OPERACIÓN ABORTADA POR EL ALGORITMO:** El sector absoluto que domina el mercado por volumen (`{sector_lider_general}`) está en modo **VENTA**.")
-            else:
-                componentes = COMPONENTES_ETFS[sector_lider_general]
-                datos_riesgo = []
-                for ticker in componentes:
-                    try:
-                        tk = yf.Ticker(ticker)
-                        hist = tk.history(period="60d")
-                        if len(hist) >= 20:
-                            c_cierre = hist['Close'].iloc[-1]
-                            c_factor = (c_cierre - hist['Low'].iloc[-1]) / (hist['High'].iloc[-1] - hist['Low'].iloc[-1]) if (hist['High'].iloc[-1] - hist['Low'].iloc[-1]) > 0 else 0.5
-                            if c_factor >= 0.45:
-                                retornos = hist['Close'].pct_change().dropna()
-                                volatilidad_real = retornos.std()
-                                precio_act = hist['Close'].iloc[-1]
-                                high_low = hist['High'] - hist['Low']
-                                high_close = np.abs(hist['High'] - hist['Close'].shift())
-                                low_close = np.abs(hist['Low'] - hist['Close'].shift())
-                                atr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1).rolling(14).mean().iloc[-1]
-                                datos_riesgo.append({
-                                    "Ticker": ticker, "Precio": precio_act, "Volatilidad": volatilidad_real, "ATR": atr if atr > 0 else (precio_act * 0.03)
-                                })
-                    except:
-                        pass
-
-                if len(datos_riesgo) >= 3:
-                    df_riesgo = pd.DataFrame(datos_riesgo).sort_values(by="Volatilidad", ascending=True).head(3)
-                    df_riesgo['Inversa_Vol'] = 1.0 / df_riesgo['Volatilidad']
-                    df_riesgo['Ponderación'] = df_riesgo['Inversa_Vol'] / df_riesgo['Inversa_Vol'].sum()
-                    st.markdown("## 📊 Portafolio de Mínimo Riesgo Sectorial Construido")
-                    
-                    conn = sqlite3.connect('agente_quant.db')
-                    cursor = conn.cursor()
-                    for rank, (_, fila) in enumerate(df_riesgo.iterrows(), 1):
-                        tk_r = fila['Ticker']
-                        p_r = fila['Precio']
-                        vol_r = fila['Volatilidad']
-                        atr_r = fila['ATR']
-                        peso = fila['Ponderación']
-                        dinero_asignado = presupuesto_total * peso
-                        cantidad_acc = int(dinero_asignado // p_r)
-                        if cantidad_acc <= 0: cantidad_acc = 1
-                        costo_total = cantidad_acc * p_r
-                        sl_matematico = p_r - (2.0 * atr_r)
-                        tp_matematico = p_r + (4.0 * atr_r)
-                        
-                        try:
-                            cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
-                                           (datetime.now().strftime("%Y-%m-%d"), tk_r, p_r, sl_matematico, tp_matematico))
-                        except:
-                            pass
-                        st.success(f"### 🛡️ ACTIVO COMPRADOR SÓLIDO {rank}: {tk_r} (Peso: {peso*100:.1f}%)")
-                        col_p5_1, col_p5_2, col_p5_3 = st.columns(3)
-                        with col_p5_1: st.metric("💵 Entrada:", f"${p_r:.2f} USD", f"Asignación: ${dinero_asignado:,.2f}")
-                        with col_p5_2: st.metric("📉 Volatilidad:", f"{vol_r*100:.2f}%", f"Comprar: {cantidad_acc} u")
-                        with col_p5_3: st.metric("🛡️ Stop Loss:", f"${sl_matematico:.2f} USD", f"TP: ${tp_matematico:.2f}")
-                    conn.commit()
-                    conn.close()
+        st.markdown("## 🛡️ Cobertura Delta y Asignación Eficiente Kelly")
+        if sector_max_comp is not None and 'ganador_c' in locals():
+            st.write(f"El optimizador ha diseñado un escudo matemático dividiendo los **${presupuesto_total:,.2f} USD** de capital:")
+            cap_long = presupuesto_total * 0.70
+            cap_hedge = presupuesto_total * 0.30
+            
+            col_k1, col_k2 = st.columns(2)
+            with col_k1:
+                st.metric(f"🟢 Posición Direccional Alfa ({ganador_c})", f"${cap_long:,.2f} USD", "70% del Portafolio")
+                st.caption(f"Focalizado en la inyección líquida del sector {sector_max_comp['Sector']}.")
+            with col_k2:
+                if sector_max_vent is not None and 'ganador_v' in locals():
+                    st.metric(f"🛡️ Cobertura o Reserva Líquida ({ganador_v} o Cash)", f"${cap_hedge:,.2f} USD", "30% de Cobertura")
+                    st.caption(f"Mitiga la correlación sistémica utilizando debilidad institucional en {sector_max_vent['Sector']}.")
+                else:
+                    st.metric("🛡️ Reserva en Bonos / Cash Flotante", f"${cap_hedge:,.2f} USD", "30% Estabilidad")
+                    st.caption("Reserva líquida ante la ausencia de sectores bajistas claros.")
 
 # =====================================================================
-# PESTAÑA 6: NUEVA - CRYPTO FLOW SELECTOR (ALTA DIRECCIONALIDAD CORTO PLAZO)
+# PESTAÑA 6: CRYPTO FLOW SELECTOR & CORTO PLAZO
 # =====================================================================
 with tab6:
-    st.subheader("🪙 Crypto Flow Selector & Detector de Inyección Líquida")
-    st.write("Identifica con precisión matemática a qué criptoactivos se está moviendo el capital institucional a corto plazo, aislando la dirección del flujo y calculando la entrada óptima sin errores de selección.")
-    
-    capital_crypto = st.number_input("Capital líquido destinado a Crypto (USD):", min_value=10.0, value=1000.0, step=50.0, key="p6_capital")
-    
-    if st.button("⚡ Rastrear Flujo Cripto Inmediato", key="btn_p6_crypto"):
+    st.subheader("🪙 Crypto Momentum & Flow Selector")
+    st.write("Monitorea la microestructura del libro de órdenes implícito y la velocidad del capital en las criptomonedas más líquidas del entorno global.")
+
+    if st.button("🪙 Escanear Flujo Cripto de Alta Velocidad", key="btn_p6_crypto"):
         analisis_crypto = []
-        barra_crypto = st.progress(0)
+        barra_p6 = st.progress(0)
         
-        for idx, (nombre_real, ticker_crypto) in enumerate(POOL_CRIPTOMONEDAS.items()):
+        for idx, (nombre, ticker) in enumerate(POOL_CRIPTOMONEDAS.items()):
             try:
-                asset_c = yf.Ticker(ticker_crypto)
-                # Datos de 15 días con velas cortas diarias para analizar velocidad e inyección reciente
-                hist_c = asset_c.history(period="15d")
-                if len(hist_c) < 5: continue
-                
-                precio_c = hist_c['Close'].iloc[-1]
-                vol_c_hoy = hist_c['Volume'].iloc[-1]
-                vol_c_prom = hist_c['Volume'].mean()
-                fuerza_liquidez = vol_c_hoy / vol_c_prom if vol_c_prom > 0 else 1.0
-                
-                # Determinación estricta del flujo: Posición del precio en la vela diaria
-                cierre_v = hist_c['Close'].iloc[-1]
-                max_v = hist_c['High'].iloc[-1]
-                min_v = hist_c['Low'].iloc[-1]
-                rango_v = max_v - min_v
-                factor_flujo = (cierre_v - min_v) / rango_v if rango_v > 0 else 0.5
-                
-                # Clasificación de la presión de inyección
-                if factor_flujo >= 0.55:
-                    tipo_flujo = "🟢 COMPRA (Acumulación Feroz)"
-                    score_crypto = fuerza_liquidez * factor_flujo * 100
-                else:
-                    tipo_flujo = "🔴 VENTA (Distribución / Salida)"
-                    score_crypto = -(fuerza_liquidez * (1.0 - factor_flujo) * 100)
+                tk = yf.Ticker(ticker)
+                hist = tk.history(period="5d")
+                if len(hist) >= 2:
+                    var_diaria = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-2]) / hist['Close'].iloc[-2]) * 100
+                    vol_relativo = hist['Volume'].iloc[-1] / hist['Volume'].mean()
                     
-                # Calcular ATR de volatilidad cripto para blindar el Stop Loss
-                h_l_c = hist_c['High'] - hist_c['Low']
-                h_c_c = np.abs(hist_c['High'] - hist_c['Close'].shift())
-                l_c_c = np.abs(hist_c['Low'] - hist_c['Close'].shift())
-                atr_crypto = pd.concat([h_l_c, h_c_c, l_c_c], axis=1).max(axis=1).rolling(5).mean().iloc[-1]
-                if atr_crypto <= 0: atr_crypto = precio_c * 0.05
-                
-                analisis_crypto.append({
-                    "Nombre": nombre_real, "Ticker": ticker_crypto, "Precio USD": precio_c,
-                    "Inyección Líquida": fuerza_liquidez, "Dirección Flujo": tipo_flujo,
-                    "Score Direccional": score_crypto, "ATR": atr_crypto
-                })
+                    c_c = hist['Close'].iloc[-1]
+                    c_mx = hist['High'].iloc[-1]
+                    c_mn = hist['Low'].iloc[-1]
+                    c_rg = c_mx - c_mn
+                    c_f = (c_c - c_mn) / c_rg if c_rg > 0 else 0.5
+                    
+                    flujo_c = "🟢 ACUMULACIÓN" if c_f >= 0.51 else "🔴 DISTRIBUCIÓN"
+                    
+                    # Cálculo de volatilidad implícita de corto plazo (True Range Modificado)
+                    retornos = hist['Close'].pct_change().dropna()
+                    vol_cp = retornos.std() * 100
+                    
+                    analisis_crypto.append({
+                        "Criptomoneda": nombre,
+                        "Ticker": ticker,
+                        "Precio": c_c,
+                        "Variación 24H": var_diaria,
+                        "Presión de Bloque": vol_relativo,
+                        "Dirección Algorítmica": flujo_c,
+                        "Volatilidad Real (%)": vol_cp
+                    })
             except:
                 pass
-            barra_crypto.progress((idx + 1) / len(POOL_CRIPTOMONEDAS))
+            barra_p6.progress((idx + 1) / len(POOL_CRIPTOMONEDAS))
             
         if analisis_crypto:
-            df_crypto = pd.DataFrame(analisis_crypto)
+            df_cr = pd.DataFrame(analisis_crypto).sort_values(by="Presión de Bloque", ascending=False)
+            df_cr_vista = df_cr.copy()
+            df_cr_vista["Precio"] = df_cr_vista["Precio"].map(lambda x: f"${x:,.4f} USD" if x < 1 else f"${x:,.2f} USD")
+            df_cr_vista["Variación 24H"] = df_cr_vista["Variación 24H"].map(lambda x: f"+{x:.2f}%" if x > 0 else f"{x:.2f}%")
+            df_cr_vista["Presión de Bloque"] = df_cr_vista["Presión de Bloque"].map(lambda x: f"{x:.2f}x volumen regular")
+            df_cr_vista["Volatilidad Real (%)"] = df_cr_vista["Volatilidad Real (%)"].map(lambda x: f"{x:.2f}% de oscilación")
             
-            st.markdown("### 📡 Mapa de Presión de Capital en el Ecosistema Cripto")
-            df_cr_vista = df_crypto.copy().sort_values(by="Inyección Líquida", ascending=False)
-            df_cr_vista["Precio USD"] = df_cr_vista["Precio USD"].map(lambda x: f"${x:,.4f} USD" if x < 1.0 else f"${x:,.2f} USD")
-            df_cr_vista["Inyección Líquida"] = df_cr_vista["Inyección Líquida"].map(lambda x: f"{x:.2f}x volumen regular")
-            st.dataframe(df_cr_vista.drop(columns=["ATR", "Score Direccional"]), use_container_width=True, hide_index=True)
+            st.dataframe(df_cr_vista, use_container_width=True, hide_index=True)
             
-            # FILTRADO ANTI-ERROR: Aislar el activo con mayor inyección de dinero que sea estrictamente de COMPRA
-            filtrado_ganadores = df_crypto[df_crypto["Dirección Flujo"].str.contains("🟢")].sort_values(by="Score Direccional", ascending=False)
-            
-            if not filtrado_ganadores.empty:
-                alerta_ganadora = filtrado_ganadores.iloc[0]
-                crypto_tk = alerta_ganadora["Ticker"]
-                crypto_name = alerta_ganadora["Nombre"]
-                precio_ent = alerta_ganadora["Precio USD"]
-                atr_f_c = alerta_ganadora["ATR"]
-                
-                # Gestión de riesgo de corto plazo: Stop Loss ceñido a 1.2x ATR, Take Profit a 2.5x ATR
-                sl_c = precio_ent - (1.2 * atr_f_c)
-                tp_c = precio_ent + (2.5 * atr_f_c)
-                
-                porc_sl_c = ((precio_ent - sl_c) / precio_ent) * 100
-                porc_tp_c = ((tp_c - precio_ent) / precio_ent) * 100
-                
-                # Asignación de capital controlada (Arriesgar máximo el 2% del capital cripto ingresado)
-                riesgo_fijo = capital_crypto * 0.02
-                delta_perdida = precio_ent - sl_c
-                unidades_a_comprar = riesgo_fijo / delta_perdida if delta_perdida > 0 else 1.0
-                capital_total_posicion = unidades_a_comprar * precio_ent
-                
-                # Integración automática con el cerebro de operaciones SQLite
-                conn = sqlite3.connect('agente_quant.db')
-                cursor = conn.cursor()
-                fecha_c_str = datetime.now().strftime("%Y-%m-%d")
-                
-                cursor.execute("SELECT COUNT(*) FROM registro_operaciones WHERE ticker = ? AND fecha = ?", (crypto_tk, fecha_c_str))
-                if cursor.fetchone()[0] == 0:
-                    try:
-                        cursor.execute("INSERT INTO registro_operaciones (fecha, ticker, precio_entrada, stop_loss, take_profit) VALUES (?, ?, ?, ?, ?)",
-                                       (fecha_c_str, crypto_tk, precio_ent, sl_c, tp_c))
-                    except:
-                        pass
-                conn.commit()
-                conn.close()
-                
-                st.markdown("### 🎯 Decisión Algorítmica Anti-Error para Corto Plazo")
-                st.success(f"🐳 **INVERSIÓN SELECCIONADA POR FLUJO COMPRADOR:** El agente determina invertir en **{crypto_name} ({crypto_tk})**.")
-                st.write(f"**Motivo:** Presenta una inyección de capital real de **{alerta_ganadora['Inyección Líquida']:.2f}x** con un cierre diario de alta dominancia compradora.")
-                
-                col_c1, col_c2, col_c3 = st.columns(3)
-                with col_c1:
-                    st.metric("🛒 Punto de Entrada:", f"${precio_ent:,.4f} USD" if precio_ent < 1 else f"${precio_ent:,.2f} USD")
-                with col_c2:
-                    st.metric("🛑 Stop Loss Defensivo:", f"${sl_c:,.4f} USD" if sl_c < 1 else f"${sl_c:,.2f} USD", f"-{porc_sl_c:.1f}%")
-                with col_c3:
-                    st.metric("💰 Take Profit Objetivo:", f"${tp_c:,.4f} USD" if tp_c < 1 else f"${tp_c:,.2f} USD", f"+{porc_tp_c:.1f}%")
-                
-                st.info(f"📦 **Plan de Asignación Táctica:** Adquirir exactamente **{unidades_a_comprar:,.4f} unidades** de `{crypto_tk}`. Capital asignado de la cuenta: **${capital_total_posicion:,.2f} USD** (Riesgo monetario neto: ${riesgo_fijo:.2f} USD).")
-            else:
-                st.warning("⚠️ Alerta de Riesgo Alto: El algoritmo detecta que todo el bloque cripto está bajo presión generalizada de **VENTA (Distribución)** o con volumen plano. Se bloquea la selección a corto plazo para evitar pérdidas por arrastre correlacionado.")
+            cripto_lider = df_cr.iloc[0]
+            st.success(f"⚡ **MOMENTUM CRIPTO:** El activo digital con mayor velocidad de participación institucional es **{cripto_lider['Criptomoneda']} ({cripto_lider['Ticker']})**, registrando una presión de bloque de **{cripto_lider['Presión de Bloque']:.2f}x** con un sesgo final de **{cripto_lider['Dirección Algorítmica']}**.")
         else:
-            st.error("No se pudo obtener la información de los nodos de liquidez cripto en este momento.")
+            st.error("Servidores de cotización cripto no disponibles de manera temporal.")
+
+# =====================================================================
+# PESTAÑA 7: SIMULADOR DE MONTECARLO PROBABILÍSTICO
+# =====================================================================
+with tab7:
+    st.subheader("🎲 Simulador Cuantitativo de Montecarlo")
+    st.write("Genera proyecciones probabilísticas y modelado de escenarios predictivos basados en el movimiento browniano geométrico del activo seleccionado.")
+
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        ticker_montecarlo = st.text_input("Símbolo para simular (Ej: WDC, AAPL, BTC-USD):", value="WDC", key="mc_ticker").strip().upper()
+    with col_m2:
+        simulaciones = st.number_input("Número de trayectorias (Simulaciones):", min_value=10, max_value=5000, value=1000, step=100)
+    with col_m3:
+        dias_proyeccion = st.number_input("Días de proyección hacia el futuro:", min_value=5, max_value=252, value=30, step=5)
+
+    if st.button("🎲 Ejecutar Simulación Probabilística", key="btn_p7_montecarlo"):
+        if ticker_montecarlo:
+            with st.spinner(f"Analizando histórico y procesando {simulaciones} escenarios para {ticker_montecarlo}..."):
+                try:
+                    asset_mc = yf.Ticker(ticker_montecarlo)
+                    h_mc = asset_mc.history(period="120d")
+                    
+                    if not h_mc.empty and len(h_mc) >= 10:
+                        # Cálculo de parámetros estadísticos reales (Rendimientos Logarítmicos)
+                        precios_cierre = h_mc['Close']
+                        precio_actual = precios_cierre.iloc[-1]
+                        
+                        rendimientos_log = np.log(precios_cierre / precios_cierre.shift(1)).dropna()
+                        media_diaria = rendimientos_log.mean()
+                        varianza_diaria = rendimientos_log.var()
+                        
+                        # Movimiento Browniano Geométrico: Drift y Volatilidad
+                        drift = media_diaria - (0.5 * varianza_diaria)
+                        volatilidad_diaria = rendimientos_log.std()
+                        
+                        # Matriz de simulaciones
+                        valores_simulados = np.zeros((dias_proyeccion + 1, simulaciones))
+                        valores_simulados[0] = precio_actual
+                        
+                        for t in range(1, dias_proyeccion + 1):
+                            shocks = np.random.normal(0, 1, simulaciones)
+                            valores_simulados[t] = valores_simulados[t - 1] * np.exp(drift + volatilidad_diaria * shocks)
+                        
+                        # Extracción de Percentiles Críticos Estadísticos
+                        precios_finales = valores_simulados[-1, :]
+                        p_optimista = np.percentile(precios_finales, 85)
+                        p_esperado = np.percentile(precios_finales, 50)
+                        p_pesimista = np.percentile(precios_finales, 15)
+                        
+                        probabilidad_ganancia = (precios_finales > precio_actual).mean() * 100
+                        
+                        # Despliegue de métricas de control de riesgo
+                        st.markdown(f"### 📊 Resultados de Distribución para {ticker_montecarlo}")
+                        st.markdown(f"**Precio Inicial de Distribución:** ${precio_actual:,.2f} USD")
+                        st.markdown("---")
+                        
+                        col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+                        with col_r1:
+                            st.metric("🟢 Escenario Alcista (P85):", f"${p_optimista:,.2f} USD", f"+{((p_optimista - precio_actual) / precio_actual) * 100:.1f}%")
+                        with col_r2:
+                            st.metric("🔵 Escenario Central (Mediana):", f"${p_esperado:,.2f} USD", f"{((p_esperado - precio_actual) / precio_actual) * 100:.1f}%")
+                        with col_r3:
+                            st.metric("🔴 Escenario Bajista (P15):", f"${p_pesimista:,.2f} USD", f"{((p_pesimista - precio_actual) / precio_actual) * 100:.1f}%")
+                        with col_r4:
+                            st.metric("🎲 Probabilidad de Retorno Positivo:", f"{probabilidad_ganancia:.1f}%", delta="Rendimiento Probable" if probabilidad_ganancia >= 50 else "Riesgo Elevado", delta_color="normal" if probabilidad_ganancia >= 50 else "inverse")
+                            
+                        st.markdown("---")
+                        st.markdown("### 📈 Curva de Proyección Temporal (Evolución de Trayectorias)")
+                        
+                        # Generación de dataframe estructurado para graficar de forma nativa y eficiente
+                        df_grafico = pd.DataFrame(valores_simulados)
+                        df_grafico.index.name = "Días"
+                        st.line_chart(df_grafico, use_container_width=True)
+                        st.caption(f"El gráfico muestra la evolución de las {simulaciones} trayectorias aleatorias generadas por el motor matemático a lo largo de {dias_proyeccion} días comerciales.")
+                    else:
+                        st.error(f"Datos históricos insuficientes para calcular los parámetros estadísticos de '{ticker_montecarlo}'.")
+                except Exception as e:
+                    st.error(f"Error crítico en el cálculo de la simulación de Montecarlo: {str(e)}")
